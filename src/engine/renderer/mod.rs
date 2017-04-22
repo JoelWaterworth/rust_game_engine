@@ -10,7 +10,7 @@ use ash::Entry;
 //use ash::Instance;
 //use ash::Device;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
-use ash::extensions::{Surface, DebugReport, Win32Surface};
+use ash::extensions::{Surface, DebugReport, Win32Surface, XlibSurface};
 use std::ops::Drop;
 
 use std::sync::Arc;
@@ -118,9 +118,17 @@ fn get_instance_layers() -> Vec<*const i8> {
     layers_names_raw
 }
 
+#[cfg(all(windows))]
 fn get_instance_extensions() -> Vec<*const i8> {
     vec![Surface::name().as_ptr(),
          Win32Surface::name().as_ptr(),
+         DebugReport::name().as_ptr()]
+}
+
+#[cfg(all(unix, not(target_os = "android")))]
+fn get_instance_extensions() -> Vec<*const i8> {
+    vec![Surface::name().as_ptr(),
+         XlibSurface::name().as_ptr(),
          DebugReport::name().as_ptr()]
 }
 
@@ -175,7 +183,7 @@ impl Renderer {
 //                                      vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 //                                      Swizzle::Identity);
 
-        let texture = Texture::init(device.clone(), "assets/Textures/test.tga");
+        let texture = Texture::init(device.clone(), "assets/textures/test.tga");
 
         let pool = Pool::init(device.clone(), render_target.swap_chain.image_count);
 
@@ -267,7 +275,7 @@ impl Renderer {
         let render_pass = device.create_render_pass(&render_pass_create_info, None).unwrap();
 
         let g_buffer = GBuffer::create_g_buffer(device.clone(), render_target.capabilities.resolution.clone(), &render_pass, pool.setup_command_buffer);
-        let mesh = Mesh::new(device.clone(), "assets/Mesh/sphere.obj", pool.setup_command_buffer);
+        let mesh = Mesh::new(device.clone(), "assets/mesh/sphere.obj", pool.setup_command_buffer);
 
         record_submit_commandbuffer(&device,
                                     pool.setup_command_buffer,

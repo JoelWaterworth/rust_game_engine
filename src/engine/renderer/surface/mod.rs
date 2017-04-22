@@ -5,7 +5,7 @@ use std::ptr;
 //use ash::Instance;
 //use ash::Device;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
-use ash::extensions::{Swapchain, Surface, Win32Surface};
+use ash::extensions::{Swapchain, Surface, Win32Surface, XlibSurface};
 use ash::vk::{uint32_t, SurfaceTransformFlagsKHR};
 use std::ops::Drop;
 
@@ -16,7 +16,9 @@ use engine::renderer::Instance;
 
 use winit;
 use winit::Window;
+#[cfg(windows)]
 use user32;
+#[cfg(windows)]
 use winapi;
 use std::u32;
 use std::u64;
@@ -161,6 +163,27 @@ impl RVSurface {
     }
 }
 
+#[cfg(all(unix, not(target_os = "android")))]
+unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(entry: &E,
+                                                        instance: &I,
+                                                        window: &winit::Window)
+                                                        -> Result<vk::SurfaceKHR, vk::Result> {
+    use winit::os::unix::WindowExt;
+    let x11_display = window.get_xlib_display().unwrap();
+    let x11_window = window.get_xlib_window().unwrap();
+    let x11_create_info = vk::XlibSurfaceCreateInfoKHR {
+        s_type: vk::StructureType::XlibSurfaceCreateInfoKhr,
+        p_next: ptr::null(),
+        flags: Default::default(),
+        window: x11_window as vk::Window,
+        dpy: x11_display as *mut vk::Display,
+    };
+    let xlib_surface_loader = XlibSurface::new(entry, instance)
+        .expect("Unable to load xlib surface");
+    xlib_surface_loader.create_xlib_surface_khr(&x11_create_info, None)
+}
+
+#[cfg(windows)]
 unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(entry: &E,
                                                         instance: &I,
                                                         window: &winit::Window)

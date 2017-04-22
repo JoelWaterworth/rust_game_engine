@@ -60,7 +60,7 @@ impl GBuffer {
                 min_lod: 0.0,
                 max_lod: 1.0,
                 anisotropy_enable: 0,
-                max_anisotropy: 0.0,
+                max_anisotropy: 1.0,
                 border_color: vk::BorderColor::FloatOpaqueWhite,
                 compare_enable: 0,
                 compare_op: vk::CompareOp::Never,
@@ -260,7 +260,7 @@ impl GBuffer {
                 let shader = Shader::from_file(device.clone(),
                                            &resolution,
                                            &render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniforms);
-            let mesh = Mesh::new(device.clone(), "assets/Mesh/plane.obj", command_buffer);
+            let mesh = Mesh::new(device.clone(), "assets/mesh/plane.obj", command_buffer);
 
             GBuffer {
                 position: position,
