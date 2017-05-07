@@ -6,7 +6,7 @@ authors = ["JoelWaterworth <joelwaterworth@gmail.com>"]
 [dependencies]
 ash = "0.15.4"
 winit = "0.5.6"
-image = "0.10.4"
+image = "0.13.0"
 glsl-to-spirv = "0.1.2"
 cgmath = { git = "https://github.com/brendanzab/cgmath.git"}
 tobj = "0.1.2"
