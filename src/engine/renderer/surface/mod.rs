@@ -32,6 +32,7 @@ pub struct RenderTarget {
 
 impl RenderTarget {
     pub fn create_render_target_and_device(instance: Arc<Instance>, window: &Window) -> (RenderTarget, Arc<Device>) {
+    	println!("RenderTarget begin");
         let surface = RVSurface::init(&instance, window);
 
         let (p_device, queue_family_index) = get_usable_gpu(&instance, &surface);

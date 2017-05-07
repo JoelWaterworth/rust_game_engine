@@ -31,13 +31,14 @@ mod memory;
 mod texture;
 mod vk_commands;
 mod g_buffer;
+mod resource;
 
 use engine::renderer::memory::*;
 use engine::renderer::vk_commands::{Pool, record_submit_commandbuffer};
 use engine::renderer::mesh::Mesh;
 use engine::renderer::device::{Device};
 use engine::renderer::shader::{Shader, UniformDescriptor};
-use engine::renderer::shader::uniform::UniformBuffer;
+use engine::renderer::shader::uniform::{UniformBuffer, DynamicUniformBuffer};
 use engine::renderer::surface::*;
 use engine::renderer::texture::*;
 use engine::renderer::g_buffer::GBuffer;
@@ -51,6 +52,7 @@ pub struct Instance {
 
 impl Instance {
     fn init(engine_name: &str, app_name: &str)-> Instance {
+    	println!("Instance begin");
         let entry = Entry::new().unwrap();
 
         let app_name = CString::new(app_name).unwrap();
@@ -143,11 +145,6 @@ pub struct Renderer {
     frame_buffers: Vec<vk::Framebuffer>,
     render_pass: vk::RenderPass,
     g_buffer: GBuffer,
-    //present_images: Vec<vk::Image>,
-
-    //depth_image: Image,
-
-    //present_image_views: Vec<vk::ImageView>,
 
     present_complete_semaphore: vk::Semaphore,
     rendering_complete_semaphore: vk::Semaphore,
@@ -158,6 +155,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn init(engine_name: &str, app_name: &str, window: &winit::Window) -> Renderer { unsafe {
+    	println!("Renderer init begin");
         let instance = Arc::new(Instance::init(engine_name, app_name));
 
         let debug_info = vk::DebugReportCallbackCreateInfoEXT {
@@ -174,14 +172,8 @@ impl Renderer {
             debug_report_loader.create_debug_report_callback_ext(&debug_info, None)
                 .unwrap();
 
-        let (render_target, device) = RenderTarget::create_render_target_and_device(instance.clone(), window);
-
-
-//        let depth_image = Image::create_sample(device.clone(),
-//                                      render_target.capabilities.resolution.clone(),
-//                                      vk::Format::D16Unorm,
-//                                      vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-//                                      Swizzle::Identity);
+        let (render_target, device) =
+            RenderTarget::create_render_target_and_device(instance.clone(), window);
 
         let texture = Texture::init(device.clone(), "assets/textures/test.tga");
 
@@ -306,11 +298,14 @@ impl Renderer {
             })
             .collect();
 
-        //let render_pass = RVRenderPass::create_frame_buffers(device.clone(), &render_target.capabilities, &present_image_views, &depth_image);
+        let present_complete_semaphore = device.create_semaphore(
+            &semaphore_create_info, None).unwrap();
+        let rendering_complete_semaphore = device.create_semaphore(
+            &semaphore_create_info, None).unwrap();
+        let offscreen_semaphore = device.create_semaphore(
+            &semaphore_create_info, None).unwrap();
 
-        let present_complete_semaphore = device.create_semaphore(&semaphore_create_info, None).unwrap();
-        let rendering_complete_semaphore = device.create_semaphore(&semaphore_create_info, None).unwrap();
-        let offscreen_semaphore = device.create_semaphore(&semaphore_create_info, None).unwrap();
+
 
         //let arc_texture = Arc::new(texture);
         let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
@@ -318,6 +313,13 @@ impl Renderer {
                                                                      MVP::from_transform(&Transform::from_position(Vector3::new(0.0,0.0,0.0)),
                                                                                          &camera,
                                                                                          render_target.capabilities.resolution.width, render_target.capabilities.resolution.height));
+	    let plah = vec![MVP::from_transform(&Transform::from_position(Vector3::new(0.0,0.0,0.0)),
+                                                                                         &camera,
+                                                                                         render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)];
+
+//        let dynamic_uniform_buffer = DynamicUniformBuffer::init(
+//            device.clone(), &plah);
+
         let uniforms = vec![
             UniformDescriptor {
                 data: Arc::new(uniform_buffer),
@@ -359,6 +361,7 @@ impl Renderer {
     }
 
     pub fn render(&self) { unsafe {
+
         let current_buffer = self.render_target.next_image(self.present_complete_semaphore);
 
         // off screen
@@ -383,8 +386,10 @@ impl Renderer {
         submit_info.p_command_buffers = &self.pool.draw_command_buffer[current_buffer as usize];
         self.device.queue_submit(self.device.queue, &[submit_info.clone()], vk::Fence::null())
             .expect("deferred submit failed");
+
         self.render_target.present(&self.rendering_complete_semaphore, current_buffer);
         self.device.queue_wait();
+
     }}
 }
 
