@@ -306,17 +306,26 @@ impl Renderer {
             &semaphore_create_info, None).unwrap();
 
 
-
         //let arc_texture = Arc::new(texture);
         let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
-        let uniform_buffer: UniformBuffer<MVP> = UniformBuffer::init(device.clone(),
-                                                                     MVP::from_transform(&Transform::from_position(Vector3::new(0.0,0.0,0.0)),
-                                                                                         &camera,
-                                                                                         render_target.capabilities.resolution.width, render_target.capabilities.resolution.height));
-	    let plah = vec![MVP::from_transform(&Transform::from_position(Vector3::new(0.0,0.0,0.0)),
-                                                                                         &camera,
-                                                                                         render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)];
 
+        let plah = vec![
+            MVP::from_transform(&Transform::from_position(Vector3::new(0.0, 0.0, 0.0)),
+                                &camera,
+                                render_target.capabilities.resolution.width, render_target.capabilities.resolution.height),
+            MVP::from_transform(&Transform::from_position(Vector3::new(1.0, 0.0, 0.0)),
+                                &camera,
+                                render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)];
+
+
+
+        let uniform_buffer = DynamicUniformBuffer::init(
+            device.clone(),plah);
+
+//	    let plah = vec![MVP::from_transform(&Transform::from_position(Vector3::new(0.0,0.0,0.0)),
+//                                                                                         &camera,
+//                                                                                         render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)];
+//
 //        let dynamic_uniform_buffer = DynamicUniformBuffer::init(
 //            device.clone(), &plah);
 
@@ -327,6 +336,8 @@ impl Renderer {
                 binding: 0,
                 set: 0,
             }];
+
+        println!("object");
         let shader = Shader::from_file(device.clone(),
                                        &render_target.capabilities.resolution,
                                        &g_buffer.deferred_render_pass,

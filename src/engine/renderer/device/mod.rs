@@ -97,7 +97,7 @@ impl Device {
     }
 
     pub fn queue_wait(&self) { unsafe {
-        self.queue_wait_idle(self.queue);
+        self.queue_wait_idle(self.queue).unwrap();
     }}
 }
 

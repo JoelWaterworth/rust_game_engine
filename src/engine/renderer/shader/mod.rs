@@ -186,15 +186,16 @@ impl Shader {
 
         let shader_entry_name = CString::new("main").unwrap();
         let shader_stage_create_infos =
-            [vk::PipelineShaderStageCreateInfo {
-                s_type: vk::StructureType::PipelineShaderStageCreateInfo,
-                p_next: ptr::null(),
-                flags: Default::default(),
-                module: vertex_shader_module,
-                p_name: shader_entry_name.as_ptr(),
-                p_specialization_info: ptr::null(),
-                stage: vk::SHADER_STAGE_VERTEX_BIT,
-            },
+            [
+                vk::PipelineShaderStageCreateInfo {
+                    s_type: vk::StructureType::PipelineShaderStageCreateInfo,
+                    p_next: ptr::null(),
+                    flags: Default::default(),
+                    module: vertex_shader_module,
+                    p_name: shader_entry_name.as_ptr(),
+                    p_specialization_info: ptr::null(),
+                    stage: vk::SHADER_STAGE_VERTEX_BIT,
+                },
                 vk::PipelineShaderStageCreateInfo {
                     s_type: vk::StructureType::PipelineShaderStageCreateInfo,
                     p_next: ptr::null(),

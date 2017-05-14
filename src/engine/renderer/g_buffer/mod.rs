@@ -3,7 +3,6 @@ pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
 
 use engine::renderer::device::Device;
 use engine::renderer::memory::*;
-use engine::renderer::texture::{Swizzle, Image, Usage};
 use engine::renderer::shader::uniform::{Uniform, UniformBuffer};
 use engine::renderer::shader::{Shader, UniformDescriptor};
 use engine::renderer::mesh::Mesh;
@@ -257,7 +256,9 @@ impl GBuffer {
                 },
             ];
 
-                let shader = Shader::from_file(device.clone(),
+            println!("deferred");
+
+            let shader = Shader::from_file(device.clone(),
                                            &resolution,
                                            &render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniforms);
             let mesh = Mesh::new(device.clone(), "assets/mesh/plane.obj", command_buffer);
@@ -308,7 +309,7 @@ impl GBuffer {
                                   self.device.cmd_set_viewport(command_buffer, &shader.viewports);
                                   self.device.cmd_set_scissor(command_buffer, &shader.scissors);
                                   self.device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, shader.graphics_pipeline);
-                                  self.device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[]);
+                                  self.device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[256]);
 
                                   mesh.draw(command_buffer);
 

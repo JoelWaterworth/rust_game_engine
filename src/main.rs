@@ -1,9 +1,10 @@
-#![feature(alloc, heap_api)]
+#![feature(repr_align)]
+#![feature(attr_literals)]
+
 
 #![allow(dead_code)]
 #[macro_use]
 extern crate ash;
-extern crate alloc;
 extern crate winit;
 #[cfg(windows)]
 extern crate user32;
