@@ -4,6 +4,7 @@ pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
 use std::mem;
 use std::ptr;
 use std::sync::Arc;
+use std::fmt::Debug;
 
 use camera::MVP;
 use engine::renderer::resource::Resource;
@@ -24,28 +25,25 @@ pub trait Uniform {
 
 pub struct UniformBuffer {
     dynamic: Resource,
-
+    alignment: u64,
 }
 
 impl UniformBuffer {
+    pub fn init_with_align<T: Clone + Copy + Sized>(device: Arc<Device>, data: T, alignment: u64) -> UniformBuffer {
+        let dynamic = Resource::create_resource(
+                                                device,
+                                                vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                                mem::size_of_val(&data));
+
+        let mut map = dynamic.map::<T>();
+        map.copy_from_slice(&[data]);
+        dynamic.unmap();
+
+        UniformBuffer { dynamic , alignment}
+    }
     pub fn init<T: Clone + Copy + Sized>(device: Arc<Device>, data: T) -> UniformBuffer {
-        unsafe {
-            let dynamic = Resource::create_resource(
-                device,
-                vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                mem::size_of_val(&data));
-
-            {
-                let mut map = dynamic.map::<T>();
-
-                map.copy_from_slice(&[data]);
-
-                dynamic.unmap();
-            }
-
-            UniformBuffer { dynamic }
-        }
+        UniformBuffer::init_with_align(device, data, mem::size_of_val(&data) as u64)
     }
 }
 
@@ -67,39 +65,33 @@ pub struct DynamicUniformBuffer {
 }
 
 impl DynamicUniformBuffer {
-    pub fn init<T: Clone + Copy + Sized>(device: Arc<Device>, data: Vec<T>) -> DynamicUniformBuffer {
-        unsafe {
-            let ubo_alignment = device.device_properties.limits.min_uniform_buffer_offset_alignment;
-            println!("ubo_alignment {}", ubo_alignment);
-            let type_size = mem::size_of::<MVP>() as u64;
-            println!("type_size {}", type_size);
-            let alignment = if (type_size % ubo_alignment) > 0 { ubo_alignment } else { 0 };
-            let dynamic_aligment = ((type_size / ubo_alignment) * ubo_alignment + alignment) as usize;
-            println!("dynamic_aligment {}", dynamic_aligment);
-            let buffer_size = data.len() * dynamic_aligment;
+    pub fn init<T: Clone + Copy + Sized + Debug>(device: Arc<Device>, data: Vec<T>) -> DynamicUniformBuffer {
 
-            let dynamic = Resource::create_resource(
-                device.clone(),
-                vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                buffer_size);
+        let ubo_alignment = device.device_properties.limits.min_uniform_buffer_offset_alignment;
+        println!("ubo_alignment {}", ubo_alignment);
+        let type_size = mem::size_of::<MVP>() as u64;
+        println!("type_size {}", type_size);
+        let alignment = if (type_size % ubo_alignment) > 0 { ubo_alignment } else { 0 };
+        let dynamic_aligment = ((type_size / ubo_alignment) * ubo_alignment + alignment) as usize;
+        println!("dynamic_aligment {}", dynamic_aligment);
+        let buffer_size = data.len() * dynamic_aligment;
 
-            {
-                let mut map = dynamic.map::<T>();
+        let dynamic = Resource::create_resource_with_alignment(
+            device.clone(),
+            vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+            buffer_size,
+            dynamic_aligment);
 
-                println!("{}", map.len());
+        let mut map = dynamic.map::<T>();
+        map.copy_from_slice(&data);
+        dynamic.unmap();
 
-                map.copy_from_slice(&data);
-
-                dynamic.unmap();
-            }
-
-            DynamicUniformBuffer {
-                dynamic: dynamic,
-                device: device,
-                size: buffer_size,
-                align: ubo_alignment as usize
-            }
+        DynamicUniformBuffer {
+            dynamic: dynamic,
+            device: device,
+            size: buffer_size,
+            align: ubo_alignment as usize
         }
     }
 }

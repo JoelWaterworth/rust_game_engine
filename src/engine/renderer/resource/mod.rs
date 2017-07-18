@@ -1,6 +1,8 @@
 use ash::vk;
 use ash::version::{DeviceV1_0, V1_0};
+use ash::util::*;
 use std::sync::Arc;
+use std::mem::align_of;
 use std::ptr;
 
 use engine::renderer::device::Device;
@@ -12,6 +14,7 @@ pub struct Resource {
     pub buffer: vk::Buffer,
     pub descriptor: vk::DescriptorBufferInfo,
     pub size: u64,
+    align: Option<u64>
 }
 
 impl Resource {
@@ -19,6 +22,24 @@ impl Resource {
                            usage: vk::BufferUsageFlags,
                            memory_properties: vk::MemoryPropertyFlags,
                            size: usize) -> Self {
+        Resource::create_resource_option(device,usage,memory_properties,size,None)
+    }
+
+    pub fn create_resource_with_alignment(
+        device: Arc<Device>,
+        usage: vk::BufferUsageFlags,
+        memory_properties: vk::MemoryPropertyFlags,
+        size: usize,
+        align: usize) -> Self {
+        Resource::create_resource_option(device,usage,memory_properties,size,Some(align as u64))
+    }
+
+    fn create_resource_option(
+                            device: Arc<Device>,
+                            usage: vk::BufferUsageFlags,
+                            memory_properties: vk::MemoryPropertyFlags,
+                            size: usize,
+                            align: Option<u64>) -> Self {
         unsafe {
             let buffer_info = vk::BufferCreateInfo {
                 s_type: vk::StructureType::BufferCreateInfo,
@@ -58,19 +79,24 @@ impl Resource {
                     offset: 0,
                     range: vk::VK_WHOLE_SIZE,
                 },
-                size: size as u64
+                size: size as u64,
+                align
             }
         }
     }
 
-    pub fn map<T>(&self) -> &mut [T] {
+    pub fn map<T>(&self) -> Align<T> {
         unsafe {
-            self.device
-                .map_memory::<T>(self.memory,
+            let ptr = self.device
+                .map_memory(self.memory,
                                  0,
                                  self.size as u64,
                                  vk::MemoryMapFlags::empty())
-                .unwrap()
+                .unwrap();
+            match self.align {
+                Some(x) => Align::new(ptr, x, self.size as u64),
+                None => Align::new(ptr, align_of::<T>() as u64, self.size as u64)
+            }
         }
     }
 

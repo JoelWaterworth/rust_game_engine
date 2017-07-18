@@ -2,7 +2,7 @@
 name = "rust_game_engine"
 version = "0.1.0"
 dependencies = [
- "ash 0.15.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ash 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cgmath 0.13.0 (git+https://github.com/brendanzab/cgmath.git)",
  "glsl-to-spirv 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -29,7 +29,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "ash"
-version = "0.15.8"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "lazy_static 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -676,7 +676,7 @@ dependencies = [
 "checksum adler32 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3ff33fe13a08dbce05bcefa2c68eea4844941437e33d6f808240b54d7157b9cd"
 "checksum android_glue 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "d8289e9637439939cc92b1995b0972117905be88bc28116c86b64d6e589bcd38"
 "checksum approx 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "08abcc3b4e9339e33a3d0a5ed15d84a687350c05689d825e0f6655eef9e76a94"
-"checksum ash 0.15.8 (registry+https://github.com/rust-lang/crates.io-index)" = "a9320f8c86bf1cac38453c8dff2cc4ce411d327688788dbc4b03b59c3d7d4329"
+"checksum ash 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)" = "5f00acb2a591d505cbd2f6493312eeba686319fc75433d80c7b04df0a732d3ab"
 "checksum bitflags 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "aad18937a628ec6abcd26d1489012cc0e18c21798210f491af69ded9b881106d"
 "checksum block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 "checksum byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c40977b0ee6b9885c9013cd41d9feffdd22deb3bb4dc3a71d901cc7a77de18c8"

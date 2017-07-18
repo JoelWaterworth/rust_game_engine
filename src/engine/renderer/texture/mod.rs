@@ -1,8 +1,10 @@
 use image;
 use ash::vk;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
+use ash::util::*;
 
 use std::mem;
+use std::mem::align_of;
 use std::ptr;
 use std::sync::Arc;
 use std::path::Path;
@@ -49,12 +51,13 @@ impl Texture {
         };
         let image_buffer_memory =
             device.allocate_memory(&image_buffer_allocate_info, None).unwrap();
-        let image_buffer_slice = device
-            .map_memory::<u8>(image_buffer_memory,
+        let image_buffer_ptr = device
+            .map_memory(image_buffer_memory,
                               0,
                               image_buffer_info.size,
                               vk::MemoryMapFlags::empty())
             .unwrap();
+        let mut image_buffer_slice = Align::new(image_buffer_ptr, align_of::<u8>() as u64, image_buffer_info.size);
         image_buffer_slice.copy_from_slice(&image_data);
         device.unmap_memory(image_buffer_memory);
         device.bind_buffer_memory(image_buffer, image_buffer_memory, 0).unwrap();

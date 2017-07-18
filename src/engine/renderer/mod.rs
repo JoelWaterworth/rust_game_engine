@@ -309,25 +309,18 @@ impl Renderer {
         //let arc_texture = Arc::new(texture);
         let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
 
-        let plah = vec![
-            MVP::from_transform(&Transform::from_position(Vector3::new(0.0, 0.0, 0.0)),
-                                &camera,
-                                render_target.capabilities.resolution.width, render_target.capabilities.resolution.height),
-            MVP::from_transform(&Transform::from_position(Vector3::new(1.0, 0.0, 0.0)),
-                                &camera,
-                                render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)];
-
-
+        let mats: Vec<MVP> = (0..10).map(|i| {
+            let y = (i as f32) / 4.0;
+            (0..10).map(|j| {
+                let x = (j as f32) / 4.0;
+                MVP::from_transform(&Transform::new(Vector3::new(y - 1.0, x - 1.0, 0.0), SMRotation::default(), Vector3::new(0.5, 0.5, 0.5)),
+                                    &camera,
+                                    render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)
+            }).collect::<Vec<MVP>>()
+        }).collect::<Vec<Vec<MVP>>>().concat();
 
         let uniform_buffer = DynamicUniformBuffer::init(
-            device.clone(),plah);
-
-//	    let plah = vec![MVP::from_transform(&Transform::from_position(Vector3::new(0.0,0.0,0.0)),
-//                                                                                         &camera,
-//                                                                                         render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)];
-//
-//        let dynamic_uniform_buffer = DynamicUniformBuffer::init(
-//            device.clone(), &plah);
+            device.clone(),mats);
 
         let uniforms = vec![
             UniformDescriptor {
@@ -342,8 +335,9 @@ impl Renderer {
                                        &render_target.capabilities.resolution,
                                        &g_buffer.deferred_render_pass,
                                        "assets/shaders/texture.frag", "assets/shaders/texture.vert",
-            true,
+                                       true,
                                        uniforms);
+
         g_buffer.build_deferred_command_buffer(&pool.draw_command_buffer, &frame_buffers, &render_pass);
         g_buffer.build_scene_command_buffer(&pool, &mesh, &shader);
         Renderer{
@@ -356,9 +350,6 @@ impl Renderer {
             frame_buffers: frame_buffers,
             render_pass: render_pass,
             g_buffer: g_buffer,
-            //present_images: present_images,
-            //present_image_views: present_image_views,
-            //depth_image: depth_image,
             present_complete_semaphore: present_complete_semaphore,
             rendering_complete_semaphore: rendering_complete_semaphore,
             offscreen_semaphore: offscreen_semaphore,

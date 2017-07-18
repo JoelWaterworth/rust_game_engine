@@ -18,8 +18,7 @@ impl ModelSpace {
     }
 }
 
-#[repr(align(256))]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct MVP {
     projection: [[f32; 4]; 4],
     view: [[f32; 4]; 4],

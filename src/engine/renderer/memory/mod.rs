@@ -1,7 +1,9 @@
 use ash::vk;
 use ash::version::{DeviceV1_0};
+use ash::util::*;
 
 use std::ptr;
+use std::mem::align_of;
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -150,14 +152,15 @@ impl Allocation {
         }
     }
 
-    pub fn map<T>(&self) -> &mut [T] {
+    pub fn map<T>(&self) -> Align<T> {
         unsafe {
-            self.device
-                .map_memory::<T>(self.memory,
+            let prt = self.device
+                .map_memory(self.memory,
                                  0,
                                  self.size as u64,
                                  vk::MemoryMapFlags::empty())
-                .unwrap()
+                .unwrap();
+            Align::new(prt, align_of::<T>() as u64, self.size as u64)
         }
     }
 

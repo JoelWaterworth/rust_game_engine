@@ -1,5 +1,6 @@
 use ash::vk;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
+use ash::util::*;
 
 use tobj;
 
@@ -10,6 +11,7 @@ use std::u32;
 use std::u64;
 use std::ptr;
 use std::mem;
+use std::mem::align_of;
 use std::ffi::OsStr;
 
 use engine::renderer::device::Device;
@@ -70,12 +72,13 @@ impl Mesh {
                                     vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
                                     vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        let index_slice = device
-            .map_memory::<u32>(staging_index_memory,
+        let index_ptr = device
+            .map_memory(staging_index_memory,
                                0,
                                index_data_size,
                                vk::MemoryMapFlags::empty())
             .unwrap();
+        let mut index_slice = Align::new(index_ptr, align_of::<u32>() as u64, index_data_size);
         index_slice.copy_from_slice(&index_data);
         device.unmap_memory(staging_index_memory);
 
@@ -85,13 +88,14 @@ impl Mesh {
                                     vk::BUFFER_USAGE_TRANSFER_SRC_BIT,
                                     vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT | vk::MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        let slice = device
-            .map_memory::<Vertex>(staging_vertex_memory,
+        let vertex_ptr = device
+            .map_memory(staging_vertex_memory,
                                   0,
                                   vertex_data_size,
                                   vk::MemoryMapFlags::empty())
             .unwrap();
-        slice.copy_from_slice(&vertices);
+        let mut vertex_slice = Align::new(vertex_ptr, align_of::<f32>() as u64, vertex_data_size);
+        vertex_slice.copy_from_slice(&vertices);
         device.unmap_memory(staging_vertex_memory);
 
         let (index_buffer, vertex_buffer, memory) =

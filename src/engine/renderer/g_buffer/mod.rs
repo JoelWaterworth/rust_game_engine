@@ -309,9 +309,11 @@ impl GBuffer {
                                   self.device.cmd_set_viewport(command_buffer, &shader.viewports);
                                   self.device.cmd_set_scissor(command_buffer, &shader.scissors);
                                   self.device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, shader.graphics_pipeline);
-                                  self.device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[256]);
+                                  for i in 0..100 {
+                                      self.device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[256 * i]);
 
-                                  mesh.draw(command_buffer);
+                                      mesh.draw(command_buffer);
+                                  }
 
                                   self.device.cmd_end_render_pass(command_buffer);
                               });
