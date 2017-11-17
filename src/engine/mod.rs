@@ -35,7 +35,6 @@ pub struct Engine {
 
 impl Engine {
     fn init() -> Engine {
-    	println!("engine init begin");
         let program_name = "rustvulkantest";
         let engine_name = "rustvulkan";
         let width: u32 = 800;
@@ -58,7 +57,6 @@ impl Engine {
     }
 
     fn main_loop(&mut self) {
-    	println!("main_loop begin");
         'render: loop {
             for event in self.window.poll_events() {
                 match event {

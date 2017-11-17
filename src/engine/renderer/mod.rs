@@ -7,8 +7,6 @@ use std::ptr;
 use std::ffi::{CString, CStr};
 
 use ash::Entry;
-//use ash::Instance;
-//use ash::Device;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
 use ash::extensions::{Surface, DebugReport, Win32Surface, XlibSurface};
 use std::ops::Drop;
@@ -43,8 +41,6 @@ use engine::renderer::surface::*;
 use engine::renderer::texture::*;
 use engine::renderer::g_buffer::GBuffer;
 
-//pub mod mics;
-
 pub struct Instance {
     pub entry: Entry<V1_0>,
     pub handle: ash::Instance<V1_0>
@@ -52,7 +48,6 @@ pub struct Instance {
 
 impl Instance {
     fn init(engine_name: &str, app_name: &str)-> Instance {
-    	println!("Instance begin");
         let entry = Entry::new().unwrap();
 
         let app_name = CString::new(app_name).unwrap();
@@ -155,7 +150,6 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn init(engine_name: &str, app_name: &str, window: &winit::Window) -> Renderer { unsafe {
-    	println!("Renderer init begin");
         let instance = Arc::new(Instance::init(engine_name, app_name));
 
         let debug_info = vk::DebugReportCallbackCreateInfoEXT {
@@ -343,8 +337,6 @@ impl Renderer {
                 binding: 0,
                 set: 0,
             }];
-
-        println!("object");
         let shader = Shader::from_file(device.clone(),
                                        &render_target.capabilities.resolution,
                                        &g_buffer.deferred_render_pass,

@@ -68,12 +68,9 @@ impl DynamicUniformBuffer {
     pub fn init<T: Clone + Copy + Sized + Debug>(device: Arc<Device>, data: Vec<T>) -> DynamicUniformBuffer {
 
         let ubo_alignment = device.device_properties.limits.min_uniform_buffer_offset_alignment;
-        println!("ubo_alignment {}", ubo_alignment);
         let type_size = mem::size_of::<MVP>() as u64;
-        println!("type_size {}", type_size);
         let alignment = if (type_size % ubo_alignment) > 0 { ubo_alignment } else { 0 };
         let dynamic_aligment = ((type_size / ubo_alignment) * ubo_alignment + alignment) as usize;
-        println!("dynamic_aligment {}", dynamic_aligment);
         let buffer_size = data.len() * dynamic_aligment;
 
         let dynamic = Resource::create_resource_with_alignment(

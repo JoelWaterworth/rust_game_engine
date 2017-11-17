@@ -32,7 +32,6 @@ pub struct RenderTarget {
 
 impl RenderTarget {
     pub fn create_render_target_and_device(instance: Arc<Instance>, window: &Window) -> (RenderTarget, Arc<Device>) {
-    	println!("RenderTarget begin");
         let surface = RVSurface::init(&instance, window);
 
         let (p_device, queue_family_index) = get_usable_gpu(&instance, &surface);
@@ -42,9 +41,9 @@ impl RenderTarget {
         let swap_chain = SwapChain::init(&instance, &device, surface.get_present_mode(p_device), &surface, &surface_capabilities);
         (RenderTarget{
             device: device.clone(),
-            surface: surface,
+            surface,
             capabilities: surface_capabilities,
-            swap_chain: swap_chain},
+            swap_chain},
          device)
     }
     pub fn present(&self, rendering_complete_semaphore: &vk::Semaphore, present_index: u32) { unsafe {

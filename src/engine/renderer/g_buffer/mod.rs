@@ -266,8 +266,6 @@ impl GBuffer {
                 },
             ];
 
-            println!("deferred");
-
             let shader = Shader::from_file(device.clone(),
                                            &resolution,
                                            &render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniforms);

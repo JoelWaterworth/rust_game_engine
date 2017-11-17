@@ -145,7 +145,6 @@ impl Shader {
 
         let write_descriptor_sets: Vec<vk::WriteDescriptorSet> =
             uniforms.iter().map(|x|{
-                println!("{:?}", x.data.get_descriptor_type());
                 vk::WriteDescriptorSet {
                     s_type: vk::StructureType::WriteDescriptorSet,
                     p_next: ptr::null(),
