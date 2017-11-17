@@ -8,7 +8,10 @@ use engine::renderer::shader::{Shader, UniformDescriptor};
 use engine::renderer::mesh::Mesh;
 use engine::renderer::vk_commands::{record_off_screen, Pool};
 
+use camera::MVP;
+
 use std::ptr;
+use std::mem;
 use std::sync::Arc;
 
 #[derive(Clone, Copy)]
@@ -37,6 +40,7 @@ pub struct GBuffer {
     pub albedo: Attachment,
     memory: vk::DeviceMemory,
     device: Arc<Device>,
+    dynamic_alignment: u32,
 }
 
 impl GBuffer {
@@ -45,6 +49,12 @@ impl GBuffer {
                            render_pass: &vk::RenderPass,
                            command_buffer: vk::CommandBuffer,) -> GBuffer {
         unsafe {
+
+            let ubo_alignment = device.device_properties.limits.min_uniform_buffer_offset_alignment;
+            let type_size = mem::size_of::<MVP>() as u64;
+            let alignment = if (type_size % ubo_alignment) > 0 { ubo_alignment } else { 0 };
+            let dynamic_alignment = ((type_size / ubo_alignment) * ubo_alignment + alignment) as u32;
+
             let sampler_info = vk::SamplerCreateInfo {
                 s_type: vk::StructureType::SamplerCreateInfo,
                 p_next: ptr::null(),
@@ -200,28 +210,28 @@ impl GBuffer {
             let lights_slice = [
                 Light {
                     position: [0.0, 0.0, 0.0],
-                    color: [1.0, 0.0, 0.0],
+                    color: [1.0, 1.0, 0.0],
                     radius: 10.0,
                 },
                 Light {
                     position: [1.0, 0.0, 0.0],
+                    color: [0.5, 0.5, 0.0],
+                    radius: 10.0,
+                }, Light {
+                    position: [0.1, 0.5, 0.5],
+                    color: [1.0, 0.0, 0.7],
+                    radius: 10.0,
+                }, Light {
+                    position: [0.5, 0.4, 0.0],
                     color: [1.0, 0.0, 0.0],
                     radius: 10.0,
                 }, Light {
-                    position: [0.0, 0.0, 1.0],
-                    color: [1.0, 0.0, 0.0],
+                    position: [0.0, 0.3, 0.1],
+                    color: [0.1, 0.7, 0.3],
                     radius: 10.0,
                 }, Light {
                     position: [0.0, 0.0, 0.0],
-                    color: [1.0, 0.0, 0.0],
-                    radius: 10.0,
-                }, Light {
-                    position: [0.0, 0.0, 0.0],
-                    color: [1.0, 0.0, 0.0],
-                    radius: 10.0,
-                }, Light {
-                    position: [0.0, 0.0, 0.0],
-                    color: [1.0, 0.0, 0.0],
+                    color: [0.0, 0.1, 0.0],
                     radius: 10.0,
                 },
             ];
@@ -264,18 +274,19 @@ impl GBuffer {
             let mesh = Mesh::new(device.clone(), "assets/mesh/plane.obj", command_buffer);
 
             GBuffer {
-                position: position,
-                normal: normal,
-                albedo: albedo,
-                depth: depth,
-                memory: memory,
-                resolution: resolution,
-                deferred_render_pass: deferred_render_pass,
-                sampler: sampler,
-                frame_buffer: frame_buffer,
-                shader: shader,
-                mesh: mesh,
+                position,
+                normal,
+                albedo,
+                depth,
+                memory,
+                resolution,
+                deferred_render_pass,
+                sampler,
+                frame_buffer,
+                shader,
+                mesh,
                 device: device.clone(),
+                dynamic_alignment
             }
         }
     }
@@ -309,8 +320,8 @@ impl GBuffer {
                                   self.device.cmd_set_viewport(command_buffer, &shader.viewports);
                                   self.device.cmd_set_scissor(command_buffer, &shader.scissors);
                                   self.device.cmd_bind_pipeline(command_buffer, vk::PipelineBindPoint::Graphics, shader.graphics_pipeline);
-                                  for i in 0..100 {
-                                      self.device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[256 * i]);
+                                  for i in 0..25 {
+                                      self.device.cmd_bind_descriptor_sets(command_buffer, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[self.dynamic_alignment * i]);
 
                                       mesh.draw(command_buffer);
                                   }

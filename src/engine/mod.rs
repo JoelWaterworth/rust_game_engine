@@ -53,17 +53,18 @@ impl Engine {
     }
 
     pub fn run() {
-        let engine = Engine::init();
+        let mut engine = Engine::init();
         engine.main_loop();
     }
 
-    fn main_loop(&self) {
+    fn main_loop(&mut self) {
     	println!("main_loop begin");
         'render: loop {
             for event in self.window.poll_events() {
                 match event {
                     winit::Event::KeyboardInput(_, _, Some(winit::VirtualKeyCode::Escape)) |
                     winit::Event::Closed => break 'render,
+                    //winit::Event::KeyboardInput(winit::ElementState::Pressed, _, Some(winit::VirtualKeyCode::))
                     _ => (),
                 }
                 self.renderer.render();

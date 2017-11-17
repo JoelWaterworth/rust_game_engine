@@ -1,5 +1,5 @@
 use ash::vk;
-use ash::version::{DeviceV1_0, V1_0};
+use ash::version::{DeviceV1_0};
 use ash::util::*;
 use std::sync::Arc;
 use std::mem::align_of;

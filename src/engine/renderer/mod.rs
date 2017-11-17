@@ -38,7 +38,7 @@ use engine::renderer::vk_commands::{Pool, record_submit_commandbuffer};
 use engine::renderer::mesh::Mesh;
 use engine::renderer::device::{Device};
 use engine::renderer::shader::{Shader, UniformDescriptor};
-use engine::renderer::shader::uniform::{UniformBuffer, DynamicUniformBuffer};
+use engine::renderer::shader::uniform::{DynamicUniformBuffer};
 use engine::renderer::surface::*;
 use engine::renderer::texture::*;
 use engine::renderer::g_buffer::GBuffer;
@@ -175,8 +175,6 @@ impl Renderer {
         let (render_target, device) =
             RenderTarget::create_render_target_and_device(instance.clone(), window);
 
-        let texture = Texture::init(device.clone(), "assets/textures/test.tga");
-
         let pool = Pool::init(device.clone(), render_target.swap_chain.image_count);
 
         let semaphore_create_info = vk::SemaphoreCreateInfo {
@@ -267,6 +265,8 @@ impl Renderer {
         let render_pass = device.create_render_pass(&render_pass_create_info, None).unwrap();
 
         let g_buffer = GBuffer::create_g_buffer(device.clone(), render_target.capabilities.resolution.clone(), &render_pass, pool.setup_command_buffer);
+        let diffuse_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_COLOR.tga");
+        let spec_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_COLOR.tga");
         let mesh = Mesh::new(device.clone(), "assets/mesh/sphere.obj", pool.setup_command_buffer);
 
         record_submit_commandbuffer(&device,
@@ -276,7 +276,8 @@ impl Renderer {
                                     &[],
                                     |texture_command_buffer| {
                                         g_buffer.depth.transfer_data(texture_command_buffer);
-                                        //texture.load_texture(texture_command_buffer);
+                                        diffuse_texture.load_texture(texture_command_buffer);
+                                        spec_texture.load_texture(texture_command_buffer);
                                     });
 
         let frame_buffers: Vec<vk::Framebuffer> = render_target.swap_chain.image_views
@@ -306,14 +307,15 @@ impl Renderer {
             &semaphore_create_info, None).unwrap();
 
 
-        //let arc_texture = Arc::new(texture);
+        let arc_d_texture = Arc::new(diffuse_texture);
+        let arc_s_texture = Arc::new(spec_texture);
         let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
 
-        let mats: Vec<MVP> = (0..10).map(|i| {
-            let y = (i as f32) / 4.0;
-            (0..10).map(|j| {
-                let x = (j as f32) / 4.0;
-                MVP::from_transform(&Transform::new(Vector3::new(y - 1.0, x - 1.0, 0.0), SMRotation::default(), Vector3::new(0.5, 0.5, 0.5)),
+        let mats: Vec<MVP> = (0..5).map(|i| {
+            let y = (i as f32) / 2.0;
+            (0..5).map(|j| {
+                let x = (j as f32) / 2.0;
+                MVP::from_transform(&Transform::new(Vector3::new(y - 1.0, x - 1.0, 0.0), SMRotation::default(), Vector3::new(0.75, 0.75, 0.75)),
                                     &camera,
                                     render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)
             }).collect::<Vec<MVP>>()
@@ -323,6 +325,18 @@ impl Renderer {
             device.clone(),mats);
 
         let uniforms = vec![
+            UniformDescriptor {
+                data: arc_d_texture,
+                stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                binding: 1,
+                set: 0,
+            },
+            UniformDescriptor {
+                data: arc_s_texture,
+                stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                binding: 2,
+                set: 0,
+            },
             UniformDescriptor {
                 data: Arc::new(uniform_buffer),
                 stage: vk::SHADER_STAGE_VERTEX_BIT,
@@ -341,20 +355,20 @@ impl Renderer {
         g_buffer.build_deferred_command_buffer(&pool.draw_command_buffer, &frame_buffers, &render_pass);
         g_buffer.build_scene_command_buffer(&pool, &mesh, &shader);
         Renderer{
-            instance: instance,
-            device: device,
-            render_target: render_target,
-            debug_report_loader: debug_report_loader,
-            debug_call_back: debug_call_back,
-            pool: pool,
-            frame_buffers: frame_buffers,
-            render_pass: render_pass,
-            g_buffer: g_buffer,
-            present_complete_semaphore: present_complete_semaphore,
-            rendering_complete_semaphore: rendering_complete_semaphore,
-            offscreen_semaphore: offscreen_semaphore,
-            mesh: mesh,
-            shader: shader
+            instance,
+            device,
+            render_target,
+            debug_report_loader,
+            debug_call_back,
+            pool,
+            frame_buffers,
+            render_pass,
+            g_buffer,
+            present_complete_semaphore,
+            rendering_complete_semaphore,
+            offscreen_semaphore,
+            mesh,
+            shader
         }
     }}
 
