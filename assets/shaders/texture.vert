@@ -10,7 +10,8 @@ layout (location = 3) in vec2 inUv;
 
 layout (location = 0) out vec3 outWorldPos;
 layout (location = 1) out vec3 outNormal;
-layout (location = 2) out vec2 o_uv;
+layout (location = 2) out vec3 outTangent;
+layout (location = 3) out vec2 o_uv;
 
 layout (binding = 0) uniform UBO
 {
@@ -33,4 +34,5 @@ void main() {
     // Normal in world space
     mat3 mNormal = transpose(inverse(mat3(ubo.model)));
     outNormal = mNormal * normalize(inNormal);
+    outTangent = mNormal * normalize(inTangent);
 }

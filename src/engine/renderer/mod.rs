@@ -87,7 +87,7 @@ impl Instance {
         let instance: ash::Instance<V1_0> = entry.create_instance(&create_info, None)
             .expect("Instance creation error");
 
-        Instance{entry: entry,
+        Instance{entry,
             handle: instance}
     }
 }
@@ -261,8 +261,8 @@ impl Renderer {
 
         let g_buffer = GBuffer::create_g_buffer(device.clone(), render_target.capabilities.resolution.clone(), &render_pass, pool.setup_command_buffer);
         let diffuse_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_COLOR.tga");
-        let spec_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_COLOR.tga");
-        let mesh = Mesh::new(device.clone(), "assets/mesh/sphere.obj", pool.setup_command_buffer);
+        let spec_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_NRM.tga");
+        let mesh = Mesh::new(device.clone(), "assets/mesh/armour.obj", pool.setup_command_buffer);
 
         record_submit_commandbuffer(&device,
                                     pool.setup_command_buffer,
@@ -306,15 +306,12 @@ impl Renderer {
         let arc_s_texture = Arc::new(spec_texture);
         let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
 
-        let mats: Vec<MVP> = (0..5).map(|i| {
-            let y = (i as f32) / 2.0;
-            (0..5).map(|j| {
-                let x = (j as f32) / 2.0;
-                MVP::from_transform(&Transform::new(Vector3::new(y - 1.0, x - 1.0, 0.0), SMRotation::default(), Vector3::new(0.75, 0.75, 0.75)),
+        let mats: Vec<MVP> = (0..3).map(|i| {
+            let x = (i as f32) * 2.5;
+                MVP::from_transform(&Transform::new(Vector3::new(x - 1.5, -1.0, -0.5 - (i as f32)), SMRotation::default(), Vector3::new(0.75, 0.75, 0.75)),
                                     &camera,
                                     render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)
-            }).collect::<Vec<MVP>>()
-        }).collect::<Vec<Vec<MVP>>>().concat();
+        }).collect::<Vec<MVP>>();
 
         let uniform_buffer = DynamicUniformBuffer::init(
             device.clone(),mats);

@@ -1,4 +1,5 @@
 use winit;
+use winit::{ControlFlow, Event, WindowEvent};
 use self::renderer::*;
 
 use std::collections::HashMap;
@@ -30,44 +31,47 @@ impl Events {
 pub struct Engine {
     renderer:   Renderer,
     window:     winit::Window,
-    events:     Events
 }
 
 impl Engine {
-    fn init() -> Engine {
+    fn init() -> (Self, winit::EventsLoop) {
+        let events_loop = winit::EventsLoop::new();
+        let monitor = events_loop.get_available_monitors().next();
         let program_name = "rustvulkantest";
         let engine_name = "rustvulkan";
-        let width: u32 = 800;
-        let height: u32 = 800;
 
         let window = winit::WindowBuilder::new()
             .with_title("Ash - Example")
-            .with_dimensions(width, height)
+            .with_fullscreen(monitor)
             .with_decorations(true)
-            .build()
+            .build(&events_loop)
             .unwrap();
 
         let renderer = Renderer::init(engine_name, program_name, &window);
-        let events = Events::init();
-        Engine {renderer: renderer, window: window, events: events}
+        (Engine {renderer, window}, events_loop)
     }
 
     pub fn run() {
-        let mut engine = Engine::init();
-        engine.main_loop();
+        let (mut engine, mut event_loop) = Engine::init();
+        engine.main_loop(&mut event_loop);
     }
 
-    fn main_loop(&mut self) {
-        'render: loop {
-            for event in self.window.poll_events() {
-                match event {
-                    winit::Event::KeyboardInput(_, _, Some(winit::VirtualKeyCode::Escape)) |
-                    winit::Event::Closed => break 'render,
-                    //winit::Event::KeyboardInput(winit::ElementState::Pressed, _, Some(winit::VirtualKeyCode::))
-                    _ => (),
-                }
-                self.renderer.render();
+    fn main_loop(&mut self, events_loop: &mut winit::EventsLoop) {
+        events_loop.run_forever(|event| {
+            match event {
+                Event::WindowEvent { event, .. } => {
+                    match event {
+                        WindowEvent::Closed => return ControlFlow::Break,
+                        WindowEvent::KeyboardInput {
+                            input: winit::KeyboardInput { virtual_keycode: Some(winit::VirtualKeyCode::Escape), .. }, ..
+                        } => return ControlFlow::Break,
+                        _ => ()
+                    }
+                },
+                _ => {}
             }
-        }
+            self.renderer.render();
+            ControlFlow::Continue
+        });
     }
 }
