@@ -7,6 +7,7 @@ extern crate user32;
 #[cfg(windows)]
 extern crate winapi;
 
+extern crate libc;
 extern crate glsl_to_spirv;
 extern crate cgmath;
 extern crate tobj;

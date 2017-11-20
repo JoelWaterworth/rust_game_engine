@@ -4,7 +4,8 @@ version = "0.1.0"
 authors = ["JoelWaterworth <joelwaterworth@gmail.com>"]
 
 [dependencies]
-ash = "0.17.0"
+libc = "0.2.33"
+ash = "0.20.1"
 winit = "0.8.3"
 image = "0.13.0"
 glsl-to-spirv = "0.1.2"

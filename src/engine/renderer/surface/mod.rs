@@ -9,7 +9,7 @@ pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
 use ash::extensions::{Swapchain, Surface, Win32Surface, XlibSurface};
 use ash::vk::{uint32_t, SurfaceTransformFlagsKHR};
 use std::ops::Drop;
-
+use libc;
 use std::sync::Arc;
 
 use engine::renderer::device::*;
@@ -196,8 +196,8 @@ unsafe fn create_surface<E: EntryV1_0, I: InstanceV1_0>(entry: &E,
         s_type: vk::StructureType::Win32SurfaceCreateInfoKhr,
         p_next: ptr::null(),
         flags: Default::default(),
-        hinstance: h_instance,
-        hwnd: hwnd as *const (),
+        hinstance: h_instance as *const libc::c_void,
+        hwnd: hwnd as *const libc::c_void,
     };
     let win32_surface_loader = Win32Surface::new(entry, instance)
         .expect("Unable to load win32 surface");

@@ -17,7 +17,7 @@ use std::sync::Arc;
 use winit;
 use std::u32;
 use std::u64;
-
+use libc;
 use camera::*;
 
 use cgmath::{Vector3};
@@ -84,8 +84,10 @@ impl Instance {
             enabled_extension_count: extension.len() as u32,
         };
 
-        let instance: ash::Instance<V1_0> = entry.create_instance(&create_info, None)
-            .expect("Instance creation error");
+        let instance: ash::Instance<V1_0> = unsafe {
+            entry.create_instance(&create_info, None)
+                .expect("Instance creation error")
+        };
 
         Instance{entry,
             handle: instance}
@@ -306,7 +308,7 @@ impl Renderer {
         let arc_s_texture = Arc::new(spec_texture);
         let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
 
-        let mats: Vec<MVP> = (0..3).map(|i| {
+        let mats: Vec<MVP> = (0..3).map(|i: i64| {
             let x = (i as f32) * 2.5;
                 MVP::from_transform(&Transform::new(Vector3::new(x - 1.5, -1.0, -0.5 - (i as f32)), SMRotation::default(), Vector3::new(0.75, 0.75, 0.75)),
                                     &camera,
@@ -420,7 +422,7 @@ unsafe extern "system" fn vulkan_debug_callback(_: vk::DebugReportFlagsEXT,
                                                 _: i32,
                                                 _: *const i8,
                                                 p_message: *const i8,
-                                                _: *mut ())
+                                                _: *mut libc::c_void)
                                                 -> u32 {
     println!("{:?}", CStr::from_ptr(p_message));
     1
