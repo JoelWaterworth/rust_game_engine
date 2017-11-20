@@ -136,7 +136,7 @@ impl Shader {
         let alloc_info = vk::DescriptorSetAllocateInfo {
             s_type: vk::StructureType::DescriptorSetAllocateInfo,
             p_next: ptr::null(),
-            descriptor_pool: descriptor_pool,
+            descriptor_pool,
             descriptor_set_count: descriptor_set_layout.len() as u32,
             p_set_layouts: descriptor_set_layout.as_ptr(),
         };
@@ -210,20 +210,27 @@ impl Shader {
             stride: mem::size_of::<Vertex>() as u32,
             input_rate: vk::VertexInputRate::Vertex,
         }];
-        let vertex_input_attribute_descriptions = [vk::VertexInputAttributeDescription {
-            location: 0,
-            binding: 0,
-            format: vk::Format::R32g32b32a32Sfloat,
-            offset: offset_of!(Vertex, pos) as u32,
-        },
+        let vertex_input_attribute_descriptions = [
+            vk::VertexInputAttributeDescription {
+                location: 0,
+                binding: 0,
+                format: vk::Format::R32g32b32a32Sfloat,
+                offset: offset_of!(Vertex, pos) as u32,
+            },
             vk::VertexInputAttributeDescription {
                 location: 1,
+                binding: 0,
+                format: vk::Format::R32g32b32a32Sfloat,
+                offset: offset_of!(Vertex, tangent) as u32,
+            },
+            vk::VertexInputAttributeDescription {
+                location: 2,
                 binding: 0,
                 format: vk::Format::R32g32b32a32Sfloat,
                 offset: offset_of!(Vertex, normal) as u32,
             },
             vk::VertexInputAttributeDescription {
-                location: 2,
+                location: 3,
                 binding: 0,
                 format: vk::Format::R32g32b32a32Sfloat,
                 offset: offset_of!(Vertex, uv) as u32,

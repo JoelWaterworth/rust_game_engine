@@ -48,12 +48,12 @@ impl Pool {
         let draw_command_buffers = device.allocate_command_buffers(&command_buffer_allocate_info)
             .unwrap();
 
-        Pool {device: device,
-            pool: pool,
+        Pool {device,
+            pool,
             draw_command_buffer: draw_command_buffers,
-            setup_command_buffer: setup_command_buffer,
-            g_buffer_setup: g_buffer_setup,
-            off_screen_command_buffer: off_screen_command_buffer}
+            setup_command_buffer,
+            g_buffer_setup,
+            off_screen_command_buffer}
     } }
 }
 

@@ -282,7 +282,7 @@ impl Renderer {
                     s_type: vk::StructureType::FramebufferCreateInfo,
                     p_next: ptr::null(),
                     flags: Default::default(),
-                    render_pass: render_pass,
+                    render_pass,
                     attachment_count: framebuffer_attachments.len() as u32,
                     p_attachments: framebuffer_attachments.as_ptr(),
                     width: render_target.capabilities.resolution.width,

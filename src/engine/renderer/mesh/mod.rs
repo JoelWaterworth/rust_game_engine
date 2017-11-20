@@ -2,8 +2,6 @@ use ash::vk;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
 use ash::util::*;
 
-use tobj;
-
 use std::ops::Drop;
 use std::sync::Arc;
 use std::path::Path;
@@ -19,48 +17,24 @@ use engine::renderer::{find_memorytype_index};
 use engine::renderer::vk_commands::record_submit_commandbuffer;
 use engine::renderer::memory::create_allocated_buffer;
 
-#[derive(Clone, Debug, Copy)]
-pub struct Vertex {
-    pub pos: [f32; 3],
-    pub normal: [f32; 3],
-    pub uv: [f32; 2],
-}
+mod loader;
+use self::loader::load;
+pub use self::loader::Vertex;
 
 pub struct Mesh {
     pub device: Arc<Device>,
     pub memory: vk::DeviceMemory,
-
     pub index_buffer: vk::Buffer,
     pub vertex_buffer: vk::Buffer,
-
     pub index_buffer_len: u32,
     pub index_offset: u64,
     pub vertex_offset: u64
 }
+
 //TODO: have the index and vertex data be inside the same buffer
 impl Mesh {
     pub fn new<P: AsRef<OsStr> + ?Sized>(device: Arc<Device>, path: &P, command_buffer: vk::CommandBuffer)-> Mesh { unsafe {
-
-        let cornell_box = tobj::load_obj(Path::new(path));
-        assert!(cornell_box.is_ok());
-        let (models, _) = cornell_box.unwrap();
-
-        let mesh = &models[0].mesh;
-
-        let mut vertices: Vec<Vertex> = Vec::new();
-
-        let y = mesh.positions.len() / 3;
-        for x in 0..y {
-            let vertex = Vertex {
-                pos: [mesh.positions[x*3], mesh.positions[x*3+1], mesh.positions[x*3+2]],
-                normal: [mesh.normals[x*3], mesh.normals[x*3+1], mesh.normals[x*3+2]],
-                uv: [mesh.texcoords[x*2], mesh.texcoords[x*2+1]],
-            };
-            vertices.push(vertex);
-        };
-
-        let index_data = mesh.indices.clone();
-
+        let (vertices, index_data) = load(path);
         let index_data_size = (mem::size_of::<u32>() * index_data.len()) as u64;
         let index_offset = 0;
         let vertex_data_size = (mem::size_of::<Vertex>() * vertices.len()) as u64;
@@ -132,9 +106,9 @@ impl Mesh {
 
         Mesh {
             device: device.clone(),
-            memory: memory,
-            index_buffer: index_buffer,
-            vertex_buffer: vertex_buffer,
+            memory,
+            index_buffer,
+            vertex_buffer,
 
             index_buffer_len: index_data.len() as u32,
             index_offset: 0,

@@ -43,6 +43,7 @@ impl Engine {
         let window = winit::WindowBuilder::new()
             .with_title("Ash - Example")
             .with_dimensions(width, height)
+            .with_decorations(true)
             .build()
             .unwrap();
 
