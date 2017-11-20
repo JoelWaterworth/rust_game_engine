@@ -4,7 +4,6 @@ use ash::util::*;
 
 use std::ops::Drop;
 use std::sync::Arc;
-use std::path::Path;
 use std::u32;
 use std::u64;
 use std::ptr;
@@ -36,9 +35,9 @@ impl Mesh {
     pub fn new<P: AsRef<OsStr> + ?Sized>(device: Arc<Device>, path: &P, command_buffer: vk::CommandBuffer)-> Mesh { unsafe {
         let (vertices, index_data) = load(path);
         let index_data_size = (mem::size_of::<u32>() * index_data.len()) as u64;
-        let index_offset = 0;
+        //let index_offset = 0;
         let vertex_data_size = (mem::size_of::<Vertex>() * vertices.len()) as u64;
-        let vertex_offset = index_data_size;
+        //let vertex_offset = index_data_size;
 
         let (staging_index_buffer, staging_index_memory) =
             create_allocated_buffer(&device,

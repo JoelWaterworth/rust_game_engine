@@ -5,6 +5,7 @@ use std::ptr;
 //use ash::Instance;
 //use ash::Device;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
+#[allow(unused_imports)]
 use ash::extensions::{Swapchain, Surface, Win32Surface, XlibSurface};
 use ash::vk::{uint32_t, SurfaceTransformFlagsKHR};
 use std::ops::Drop;

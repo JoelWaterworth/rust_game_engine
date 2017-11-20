@@ -8,6 +8,7 @@ use std::ffi::{CString, CStr};
 
 use ash::Entry;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
+#[allow(unused_imports)]
 use ash::extensions::{Surface, DebugReport, Win32Surface, XlibSurface};
 use std::ops::Drop;
 
