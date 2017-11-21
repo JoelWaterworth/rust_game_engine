@@ -4,13 +4,13 @@ version = "0.1.0"
 authors = ["JoelWaterworth <joelwaterworth@gmail.com>"]
 
 [dependencies]
-libc = "0.2.33"
 ash = "0.20.1"
-winit = "0.8.3"
-image = "0.13.0"
-glsl-to-spirv = "0.1.2"
 cgmath = { git = "https://github.com/brendanzab/cgmath.git"}
+glsl-to-spirv = "0.1.2"
+libc = "0.2.33"
+image = "0.13.0"
 tobj = "0.1.2"
+winit = "0.8.3"
 
 [target.'cfg(windows)'.dependencies]
 user32-sys = "0.2.0"

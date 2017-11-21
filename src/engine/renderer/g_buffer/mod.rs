@@ -110,7 +110,7 @@ impl GBuffer {
                 };
                 renderpass_attachments.push(
                     vk::AttachmentDescription {
-                        format: format,
+                        format,
                         flags: vk::AttachmentDescriptionFlags::empty(),
                         samples: vk::SAMPLE_COUNT_1_BIT,
                         load_op: vk::AttachmentLoadOp::Clear,
@@ -118,7 +118,7 @@ impl GBuffer {
                         stencil_load_op: vk::AttachmentLoadOp::DontCare,
                         stencil_store_op: vk::AttachmentStoreOp::DontCare,
                         initial_layout: vk::ImageLayout::Undefined,
-                        final_layout: final_layout,
+                        final_layout,
                     })
             }
 
@@ -410,7 +410,7 @@ impl Attachment {
                 p_next: ptr::null(),
                 flags: Default::default(),
                 image_type: vk::ImageType::Type2d,
-                format: format,
+                format,
                 extent: vk::Extent3D {
                     width: extent.width,
                     height: extent.height,
@@ -459,7 +459,7 @@ impl Attachment {
                 p_next: ptr::null(),
                 flags: Default::default(),
                 view_type: vk::ImageViewType::Type2d,
-                format: format,
+                format,
                 components: vk::ComponentMapping {
                     r: vk::ComponentSwizzle::Identity,
                     g: vk::ComponentSwizzle::Identity,
@@ -467,33 +467,32 @@ impl Attachment {
                     a: vk::ComponentSwizzle::Identity,
                 },
                 subresource_range: vk::ImageSubresourceRange {
-                    aspect_mask: aspect_mask,
+                    aspect_mask,
                     base_mip_level: 0,
                     level_count: 1,
                     base_array_layer: 0,
                     layer_count: 1,
                 },
-                image: image,
+                image,
             };
 
             let view = device.create_image_view(&view_info, None).unwrap();
 
             Attachment {
-                image: image,
-                format: format,
-                usage: usage,
+                image,
+                format,
+                usage,
                 descriptor: vk::DescriptorImageInfo {
                     image_layout: vk::ImageLayout::ShaderReadOnlyOptimal,
                     image_view: view,
-                    sampler: sampler,
+                    sampler,
                 },
                 device: device.clone()
             }
         }).collect(), memory)
     }}
 
-    pub fn transfer_data(&self, command_buffer: vk::CommandBuffer, ) { unsafe {
-
+    pub fn transfer_data(&self, command_buffer: vk::CommandBuffer) { unsafe {
         let dst_access_mask =
             if self.usage == vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT {
                 vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
@@ -508,7 +507,6 @@ impl Attachment {
                 vk::ImageLayout::TransferDstOptimal
             };
 
-
         let aspect_mask =
             if self.usage == vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT {
             vk::IMAGE_ASPECT_DEPTH_BIT
@@ -520,14 +518,14 @@ impl Attachment {
             s_type: vk::StructureType::ImageMemoryBarrier,
             p_next: ptr::null(),
             src_access_mask: Default::default(),
-            dst_access_mask: dst_access_mask,
-            old_layout: vk::ImageLayout::Undefined,
-            new_layout: new_layout,
+            dst_access_mask,
+            old_layout: vk::ImageLayout::TransferDstOptimal,
+            new_layout,
             src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             image: self.image,
             subresource_range: vk::ImageSubresourceRange {
-                aspect_mask: aspect_mask,
+                aspect_mask,
                 base_mip_level: 0,
                 level_count: 1,
                 base_array_layer: 0,

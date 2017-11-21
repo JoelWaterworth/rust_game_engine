@@ -94,13 +94,13 @@ impl Texture {
         let sampler = device.create_sampler(&sampler_info, None).unwrap();
 
         Texture {
-            image_buffer_memory: image_buffer_memory,
-            image_buffer: image_buffer,
+            image_buffer_memory,
+            image_buffer,
             texture_image: texture_image.clone(),
             descriptor: vk::DescriptorImageInfo {
                 image_layout: vk::ImageLayout::General,
                 image_view: texture_image.view,
-                sampler: sampler,
+                sampler,
             },
             device: device.clone()
         } }
@@ -208,7 +208,7 @@ impl Sample {
             descriptor: vk::DescriptorImageInfo {
                 image_layout: vk::ImageLayout::ShaderReadOnlyOptimal,
                 image_view: image.view,
-                sampler: sampler,
+                sampler,
             }
         }
     }
@@ -250,7 +250,7 @@ impl Image {
             p_next: ptr::null(),
             flags: Default::default(),
             image_type: vk::ImageType::Type2d,
-            format: format,
+            format,
             extent: vk::Extent3D {
                 width: extent.width,
                 height: extent.height,
@@ -324,9 +324,9 @@ impl Image {
             flags: Default::default(),
             view_type: vk::ImageViewType::Type2d,
             format: create_info.format,
-            components: components,
+            components,
             subresource_range: vk::ImageSubresourceRange {
-                aspect_mask: aspect_mask,
+                aspect_mask,
                 base_mip_level: 0,
                 level_count: 1,
                 base_array_layer: 0,
@@ -336,13 +336,13 @@ impl Image {
         };
         let depth_image_view = device.create_image_view(&depth_image_view_info, None).unwrap();
         Image {
-            device: device,
+            device,
             image: depth_image,
             view: depth_image_view,
             memory: depth_image_memory,
             dimensions: extent,
-            format: format,
-            usage: usage,
+            format,
+            usage,
         }
     }}
 
@@ -356,7 +356,7 @@ impl Image {
             p_next: ptr::null(),
             flags: Default::default(),
             image_type: vk::ImageType::Type2d,
-            format: format,
+            format,
             extent: vk::Extent3D {
                 width: extent.width,
                 height: extent.height,
@@ -404,14 +404,14 @@ impl Image {
             s_type: vk::StructureType::ImageMemoryBarrier,
             p_next: ptr::null(),
             src_access_mask: Default::default(),
-            dst_access_mask: dst_access_mask,
-            old_layout: vk::ImageLayout::Undefined,
-            new_layout: new_layout,
+            dst_access_mask,
+            old_layout: vk::ImageLayout::TransferDstOptimal,
+            new_layout,
             src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             image: self.image,
             subresource_range: vk::ImageSubresourceRange {
-                aspect_mask: aspect_mask,
+                aspect_mask,
                 base_mip_level: 0,
                 level_count: 1,
                 base_array_layer: 0,
