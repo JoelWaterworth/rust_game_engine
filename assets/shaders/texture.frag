@@ -17,7 +17,6 @@ layout (location = 2) out vec4 gcolor;
 
 void main(){
     gPosition   = vec4(outWorldPos,1.0);
-
 // Calculate normal in tangent space
 	vec3 N = normalize(outNormal);
 	N.y = -N.y;
@@ -25,6 +24,6 @@ void main(){
 	vec3 B = cross(N, T);
 	mat3 TBN = mat3(T, B, N);
 	vec3 tnorm = TBN * normalize(texture(noramlmap, o_uv).xyz * 2.0 - vec3(1.0));
-	gNormal     = vec4(tnorm, 1.0);
+	gNormal     = vec4(N, 1.0);
     gcolor      = texture(dTexture, o_uv);
 }

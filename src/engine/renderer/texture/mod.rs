@@ -379,8 +379,7 @@ impl Image {
         Image::from_info(device, extent, format, usage, swizzle, create_info)
     }
 
-    pub fn transfer_data(&self, command_buffer: vk::CommandBuffer, ) { unsafe {
-
+    pub fn transfer_data(&self, command_buffer: vk::CommandBuffer) { unsafe {
         let dst_access_mask = match self.usage {
             Usage::Depth => vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                 vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,

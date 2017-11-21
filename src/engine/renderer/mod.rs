@@ -247,7 +247,8 @@ impl Renderer {
                 dst_access_mask: vk::ACCESS_COLOR_ATTACHMENT_READ_BIT |
                     vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                 dst_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            }];
+            }
+        ];
         let render_pass_create_info = vk::RenderPassCreateInfo {
             s_type: vk::StructureType::RenderPassCreateInfo,
             flags: Default::default(),
@@ -274,7 +275,8 @@ impl Renderer {
                                     |texture_command_buffer| {
                                         diffuse_texture.load_texture(texture_command_buffer);
                                         spec_texture.load_texture(texture_command_buffer);
-                                    });
+                                    }
+        );
         let frame_buffers: Vec<vk::Framebuffer> = render_target.swap_chain.image_views
             .iter()
             .map(|&present_image_view| {
@@ -334,7 +336,8 @@ impl Renderer {
                 stage: vk::SHADER_STAGE_VERTEX_BIT,
                 binding: 0,
                 set: 0,
-            }];
+            }
+        ];
         let shader = Shader::from_file(device.clone(),
                                        &render_target.capabilities.resolution,
                                        &g_buffer.deferred_render_pass,

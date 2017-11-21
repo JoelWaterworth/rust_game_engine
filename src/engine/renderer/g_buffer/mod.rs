@@ -209,31 +209,30 @@ impl GBuffer {
 
             let lights_slice = [
                 Light {
-                    position: [0.0, 0.0, 0.0],
+                    position: [-0.5, 0.5, -2.0],
                     color: [1.0, 1.0, 0.0],
                     radius: 10.0,
-                },
-                Light {
-                    position: [1.0, 0.0, 0.0],
+                }, Light {
+                    position: [-0.5, -0.5, 1.0],
                     color: [0.5, 0.5, 0.0],
                     radius: 10.0,
                 }, Light {
-                    position: [0.1, 0.5, 0.5],
+                    position: [-0.5, -0.5, -1.0],
                     color: [1.0, 0.0, 0.7],
                     radius: 10.0,
                 }, Light {
-                    position: [0.5, 0.4, 0.0],
-                    color: [1.0, 0.0, 0.0],
+                    position: [0.5, 0.5, 2.0],
+                    color: [1.0, 1.0, 0.0],
                     radius: 10.0,
                 }, Light {
-                    position: [0.0, 0.3, 0.1],
-                    color: [0.1, 0.7, 0.3],
+                    position: [0.5, -0.5, 0.5],
+                    color: [0.5, 0.5, 0.0],
                     radius: 10.0,
                 }, Light {
-                    position: [0.0, 0.0, 0.0],
-                    color: [0.0, 0.1, 0.0],
+                    position: [0.5, 0.5, -0.5],
+                    color: [1.0, 0.0, 0.7],
                     radius: 10.0,
-                },
+                }
             ];
 
             let lights = UniformBuffer::init(device.clone(), Lights{lights: lights_slice, view_pos: [0.0, 0.0, 1.0]});

@@ -18,6 +18,9 @@ mod camera;
 
 use engine::Engine;
 
+//TODO: implement shadows
+//TODO: implement text
+
 fn main() {
     Engine::run()
 }
