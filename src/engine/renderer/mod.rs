@@ -265,18 +265,16 @@ impl Renderer {
         let diffuse_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_COLOR.tga");
         let spec_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_NRM.tga");
         let mesh = Mesh::new(device.clone(), "assets/mesh/armour.obj", pool.setup_command_buffer);
-        /*
+
         record_submit_commandbuffer(&device,
                                     pool.setup_command_buffer,
                                     &[vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT],
                                     &[],
                                     &[],
                                     |texture_command_buffer| {
-                                        g_buffer.depth.transfer_data(texture_command_buffer);
-                                        //diffuse_texture.load_texture(texture_command_buffer);
-                                        //spec_texture.load_texture(texture_command_buffer);
+                                        diffuse_texture.load_texture(texture_command_buffer);
+                                        spec_texture.load_texture(texture_command_buffer);
                                     });
-        */
         let frame_buffers: Vec<vk::Framebuffer> = render_target.swap_chain.image_views
             .iter()
             .map(|&present_image_view| {
@@ -319,7 +317,6 @@ impl Renderer {
             device.clone(),mats);
 
         let uniforms = vec![
-            /*
             UniformDescriptor {
                 data: arc_d_texture,
                 stage: vk::SHADER_STAGE_FRAGMENT_BIT,
@@ -332,7 +329,6 @@ impl Renderer {
                 binding: 2,
                 set: 0,
             },
-            */
             UniformDescriptor {
                 data: Arc::new(uniform_buffer),
                 stage: vk::SHADER_STAGE_VERTEX_BIT,

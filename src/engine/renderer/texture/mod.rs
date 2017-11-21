@@ -403,9 +403,9 @@ impl Image {
         let layout_transition_barrier = vk::ImageMemoryBarrier {
             s_type: vk::StructureType::ImageMemoryBarrier,
             p_next: ptr::null(),
-            src_access_mask: Default::default(),
-            dst_access_mask,
-            old_layout: vk::ImageLayout::TransferDstOptimal,
+            src_access_mask: Default::default(), //TODO https://vulkan-tutorial.com/Texture_mapping
+            dst_access_mask: Default::default(), //TODO
+            old_layout: vk::ImageLayout::Undefined,
             new_layout,
             src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
             dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
