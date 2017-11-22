@@ -11,10 +11,10 @@ use std::mem;
 use std::mem::align_of;
 use std::ffi::OsStr;
 
-use engine::renderer::device::Device;
-use engine::renderer::{find_memorytype_index};
-use engine::renderer::vk_commands::record_submit_commandbuffer;
-use engine::renderer::memory::create_allocated_buffer;
+use renderer::device::Device;
+use renderer::{find_memorytype_index};
+use renderer::vk_commands::record_submit_commandbuffer;
+use renderer::memory::create_allocated_buffer;
 
 mod loader;
 use self::loader::load;

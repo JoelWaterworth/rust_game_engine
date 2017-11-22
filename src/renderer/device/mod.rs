@@ -10,9 +10,9 @@ use std::ops::Drop;
 
 use std::sync::Arc;
 
-use engine::renderer::surface::RVSurface;
-use engine::renderer;
-use engine::renderer::memory::find_memorytype_index;
+use renderer::surface::RVSurface;
+use renderer;
+use renderer::memory::find_memorytype_index;
 
 use std::u32;
 

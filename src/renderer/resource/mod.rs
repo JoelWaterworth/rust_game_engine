@@ -4,11 +4,15 @@ use ash::util::*;
 use std::sync::Arc;
 use std::mem::align_of;
 use std::ptr;
+use std::path::Path;
+use std::collections::HashMap;
 
-use engine::renderer::device::Device;
-use engine::renderer::memory::find_memorytype_index;
+use renderer::device::Device;
+use renderer::mesh::Mesh;
+use renderer::memory::find_memorytype_index;
+use renderer::texture::Texture;
 
-pub struct Resource {
+pub struct DyanimicResource {
     device: Arc<Device>,
     pub memory: vk::DeviceMemory,
     pub buffer: vk::Buffer,
@@ -17,12 +21,12 @@ pub struct Resource {
     align: Option<u64>
 }
 
-impl Resource {
+impl DyanimicResource {
     pub fn create_resource(device: Arc<Device>,
                            usage: vk::BufferUsageFlags,
                            memory_properties: vk::MemoryPropertyFlags,
                            size: usize) -> Self {
-        Resource::create_resource_option(device,usage,memory_properties,size,None)
+        Self::create_resource_option(device,usage,memory_properties,size,None)
     }
 
     pub fn create_resource_with_alignment(
@@ -31,7 +35,7 @@ impl Resource {
         memory_properties: vk::MemoryPropertyFlags,
         size: usize,
         align: usize) -> Self {
-        Resource::create_resource_option(device,usage,memory_properties,size,Some(align as u64))
+        Self::create_resource_option(device,usage,memory_properties,size,Some(align as u64))
     }
 
     fn create_resource_option(
@@ -70,7 +74,7 @@ impl Resource {
 
             device.bind_buffer_memory(buffer, memory, 0).unwrap();
 
-            Resource {
+            DyanimicResource {
                 device: device.clone(),
                 memory,
                 buffer,
@@ -107,12 +111,23 @@ impl Resource {
     }
 }
 
-impl Drop for Resource {
+impl Drop for DyanimicResource {
     fn drop(&mut self) {
         unsafe {
             //self.device.unmap_memory(self.memory);
             self.device.destroy_buffer(self.buffer, None);
             self.device.free_memory(self.memory, None);
         }
+    }
+}
+
+pub struct ResourceManager {
+    meshes: HashMap<String, Mesh>,
+    textures: HashMap<String, Texture>
+}
+
+impl ResourceManager {
+    pub fn new() -> Self {
+        Self { meshes: HashMap::new(), textures: HashMap::new()}
     }
 }

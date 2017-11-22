@@ -1,14 +1,14 @@
 use ash::vk;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
 
-use engine::renderer::device::Device;
-use engine::renderer::memory::*;
-use engine::renderer::shader::uniform::{Uniform, UniformBuffer};
-use engine::renderer::shader::{Shader, UniformDescriptor};
-use engine::renderer::mesh::Mesh;
-use engine::renderer::vk_commands::{record_off_screen, Pool};
+use renderer::device::Device;
+use renderer::memory::*;
+use renderer::shader::uniform::{Uniform, UniformBuffer};
+use renderer::shader::{Shader, UniformDescriptor};
+use renderer::mesh::Mesh;
+use renderer::vk_commands::{record_off_screen, Pool};
 
-use camera::MVP;
+use camera::ModelSpace;
 
 use std::ptr;
 use std::mem;
@@ -51,7 +51,7 @@ impl GBuffer {
         unsafe {
 
             let ubo_alignment = device.device_properties.limits.min_uniform_buffer_offset_alignment;
-            let type_size = mem::size_of::<MVP>() as u64;
+            let type_size = mem::size_of::<ModelSpace>() as u64;
             let alignment = if (type_size % ubo_alignment) > 0 { ubo_alignment } else { 0 };
             let dynamic_alignment = ((type_size / ubo_alignment) * ubo_alignment + alignment) as u32;
 

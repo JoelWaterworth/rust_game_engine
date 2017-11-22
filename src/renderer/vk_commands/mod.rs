@@ -5,7 +5,7 @@ use std::ptr;
 use std::sync::Arc;
 use std::u64;
 
-use engine::renderer::device::Device;
+use renderer::device::Device;
 
 pub struct Pool {
     device: Arc<Device>,

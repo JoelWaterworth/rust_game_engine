@@ -12,8 +12,8 @@ use std::ops::Drop;
 use libc;
 use std::sync::Arc;
 
-use engine::renderer::device::*;
-use engine::renderer::Instance;
+use renderer::device::*;
+use renderer::Instance;
 
 use winit;
 use winit::Window;

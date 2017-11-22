@@ -17,11 +17,15 @@ layout (binding = 0) uniform UBO
 {
 	mat4 projection;
 	mat4 view;
-	mat4 model;
 } ubo;
 
+layout (binding = 3) uniform Model
+ {
+    mat4 m;
+ } model;
+
 void main() {
-    vec4 WorldPos = ubo.model * vec4(inPosition, 1.0);
+    vec4 WorldPos = model.m * vec4(inPosition, 1.0);
     outWorldPos = WorldPos.xyz;
     gl_Position = ubo.projection * ubo.view * WorldPos;
 
@@ -32,7 +36,7 @@ void main() {
     outWorldPos.y = -outWorldPos.y;
 
     // Normal in world space
-    mat3 mNormal = transpose(inverse(mat3(ubo.model)));
+    mat3 mNormal = transpose(inverse(mat3(model.m)));
     outNormal = mNormal * normalize(inNormal);
     outTangent = mNormal * normalize(inTangent);
 }

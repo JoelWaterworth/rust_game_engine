@@ -4,7 +4,7 @@ use cgmath::Point3;
 
 use std::ops::AddAssign;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct ModelSpace {
     mat: [[f32; 4]; 4]
 }
@@ -13,29 +13,27 @@ impl ModelSpace {
     pub fn from_location(location: Vector3<f32>) -> ModelSpace {
         ModelSpace::new(array4x4(Matrix4::from_translation(location)))
     }
-    pub fn new(mvp: [[f32; 4]; 4]) -> ModelSpace {
-        ModelSpace{ mat: mvp }
+    pub fn new(mat: [[f32; 4]; 4]) -> ModelSpace {
+        ModelSpace{ mat }
     }
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct MVP {
+pub struct VP {
     projection: [[f32; 4]; 4],
     view: [[f32; 4]; 4],
-    model: [[f32; 4]; 4],
 }
 
-impl MVP {
-    pub fn from_transform(transform: &Transform, camera: &Camera, width: u32, height: u32) -> MVP {
-        let world_matrix        = camera.look_at();
-        let model_matrix        = transform.to_matrix().clone();
-        let projection                 = camera.mat_perspective(width, height) * world_matrix * model_matrix;
+impl VP {
+    pub fn from_camera(camera: &Camera, width: u32, height: u32) -> Self {
+        let world_matrix  = camera.look_at();
+        let projection                 = camera.mat_perspective(width, height) * world_matrix;
 
-        MVP::new(array4x4(projection), array4x4(world_matrix), array4x4(model_matrix))
+        Self::new(array4x4(projection), array4x4(world_matrix))
     }
 
-    pub fn new(projection: [[f32; 4]; 4], view: [[f32; 4]; 4], model: [[f32; 4]; 4],) -> MVP {
-        MVP{ projection: projection, view: view, model: model }
+    pub fn new(projection: [[f32; 4]; 4], view: [[f32; 4]; 4]) -> Self {
+        Self{ projection, view}
     }
 }
 
@@ -74,7 +72,7 @@ pub struct Transform {
 
 impl Transform {
     pub fn new(position: Vector3<f32>, rotation: SMRotation, scale: Vector3<f32>) -> Transform {
-        Transform{position: position, rotation: rotation, scale: scale, up_vector: Vector3::new(0.0, 1.0, 0.0), forward_vector: Vector3::new(0.0, 0.0, -1.0),}
+        Transform{position, rotation, scale, up_vector: Vector3::new(0.0, 1.0, 0.0), forward_vector: Vector3::new(0.0, 0.0, -1.0),}
     }
     pub fn to_matrix(&self) ->  Matrix4<f32> {
         (Matrix4::from_angle_y(Rad(self.rotation.y))) * (Matrix4::from_angle_x(Rad(self.rotation.x))) * (Matrix4::from_angle_z(Rad(self.rotation.z))) *

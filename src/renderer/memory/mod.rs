@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use engine::renderer::device::Device;
+use renderer::device::Device;
 
 struct Descriptor {}
 

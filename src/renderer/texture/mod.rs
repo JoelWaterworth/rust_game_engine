@@ -9,9 +9,9 @@ use std::ptr;
 use std::sync::Arc;
 use std::path::Path;
 
-use engine::renderer::memory::*;
-use engine::renderer::device::Device;
-use engine::renderer::shader::uniform::Uniform;
+use renderer::memory::*;
+use renderer::device::Device;
+use renderer::shader::uniform::Uniform;
 
 pub struct Texture {
     image_buffer_memory: vk::DeviceMemory,

@@ -30,17 +30,17 @@ mod memory;
 mod texture;
 mod vk_commands;
 mod g_buffer;
-mod resource;
+pub mod resource;
 
-use engine::renderer::memory::*;
-use engine::renderer::vk_commands::{Pool, record_submit_commandbuffer};
-use engine::renderer::mesh::Mesh;
-use engine::renderer::device::{Device};
-use engine::renderer::shader::{Shader, UniformDescriptor};
-use engine::renderer::shader::uniform::{DynamicUniformBuffer};
-use engine::renderer::surface::*;
-use engine::renderer::texture::*;
-use engine::renderer::g_buffer::GBuffer;
+use renderer::memory::*;
+use renderer::vk_commands::{Pool, record_submit_commandbuffer};
+use renderer::mesh::Mesh;
+use renderer::device::{Device};
+use renderer::shader::{Shader, UniformDescriptor};
+use renderer::shader::uniform::{DynamicUniformBuffer, UniformBuffer};
+use renderer::surface::*;
+use renderer::texture::*;
+use renderer::g_buffer::GBuffer;
 
 pub struct Instance {
     pub entry: Entry<V1_0>,
@@ -308,15 +308,15 @@ impl Renderer {
         let arc_s_texture = Arc::new(spec_texture);
         let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
 
-        let mats: Vec<MVP> = (0..3).map(|i: i64| {
+        let mats: Vec<ModelSpace> = (0..3).map(|i: i64| {
             let x = (i as f32) * 2.5;
-                MVP::from_transform(&Transform::new(Vector3::new(x - 1.5, -1.0, -0.5 - (i as f32)), SMRotation::default(), Vector3::new(0.75, 0.75, 0.75)),
-                                    &camera,
-                                    render_target.capabilities.resolution.width, render_target.capabilities.resolution.height)
-        }).collect::<Vec<MVP>>();
+            ModelSpace::from_location(Vector3::new(x - 1.5, -2.0, -0.5 - (i as f32)))
+        }).collect::<Vec<ModelSpace>>();
 
         let uniform_buffer = DynamicUniformBuffer::init(
             device.clone(),mats);
+
+        let mv = UniformBuffer::init(device.clone(), VP::from_camera(&camera, render_target.capabilities.resolution.width, render_target.capabilities.resolution.height));
 
         let uniforms = vec![
             UniformDescriptor {
@@ -332,9 +332,15 @@ impl Renderer {
                 set: 0,
             },
             UniformDescriptor {
-                data: Arc::new(uniform_buffer),
+                data: Arc::new(mv),
                 stage: vk::SHADER_STAGE_VERTEX_BIT,
                 binding: 0,
+                set: 0,
+            },
+            UniformDescriptor {
+                data: Arc::new(uniform_buffer),
+                stage: vk::SHADER_STAGE_VERTEX_BIT,
+                binding: 3,
                 set: 0,
             }
         ];

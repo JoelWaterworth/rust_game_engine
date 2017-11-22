@@ -15,8 +15,8 @@ use std::ops::Drop;
 
 use std::sync::Arc;
 
-use engine::renderer::device::Device;
-use engine::renderer::mesh::Vertex;
+use renderer::device::Device;
+use renderer::mesh::Vertex;
 
 use std::u32;
 
