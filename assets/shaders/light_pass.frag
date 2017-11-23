@@ -3,9 +3,9 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 
-layout (binding = 1) uniform sampler2D gPosition;
-layout (binding = 2) uniform sampler2D gNormal;
-layout (binding = 3) uniform sampler2D gAlbedoSpec;
+layout (binding = 0) uniform sampler2D gPosition;
+layout (binding = 1) uniform sampler2D gNormal;
+layout (binding = 2) uniform sampler2D gAlbedoSpec;
 
 struct Light {
 	vec3 position;

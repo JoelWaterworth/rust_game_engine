@@ -19,6 +19,8 @@ use std::u32;
 use std::u64;
 use libc;
 use camera::*;
+use renderer::g_buffer::{Light, Lights};
+
 
 use cgmath::{Vector3};
 
@@ -149,6 +151,8 @@ pub struct Renderer {
     offscreen_semaphore: vk::Semaphore,
     mesh: Mesh,
     shader: Shader,
+    plane: Mesh,
+    light_pass: Shader,
 }
 
 impl Renderer {
@@ -276,8 +280,82 @@ impl Renderer {
                                        true,
                                        uniforms);
 
-        g_buffer.build_deferred_command_buffer(&pool.draw_command_buffer, &frame_buffers, &render_pass.render_pass);
+        let lights_slice = [
+            Light {
+                position: [-0.5, 0.5, -2.0],
+                color: [1.0, 1.0, 0.0],
+                radius: 10.0,
+            }, Light {
+                position: [-0.5, -0.5, 1.0],
+                color: [0.5, 0.5, 0.0],
+                radius: 10.0,
+            }, Light {
+                position: [-0.5, -0.5, -1.0],
+                color: [1.0, 0.0, 0.7],
+                radius: 10.0,
+            }, Light {
+                position: [0.5, 0.5, 2.0],
+                color: [1.0, 1.0, 0.0],
+                radius: 10.0,
+            }, Light {
+                position: [0.5, -0.5, 0.5],
+                color: [0.5, 0.5, 0.0],
+                radius: 10.0,
+            }, Light {
+                position: [0.5, 0.5, -0.5],
+                color: [1.0, 0.0, 0.7],
+                radius: 10.0,
+            }
+        ];
+
+        let lights = UniformBuffer::init(device.clone(), Lights{lights: lights_slice, view_pos: [0.0, 0.0, 1.0]});
+
+        let uniforms0 = vec![
+            UniformDescriptor {
+                data: Arc::new(g_buffer.position.clone()),
+                stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                binding: 0,
+                set: 0,
+            },
+            UniformDescriptor {
+                data: Arc::new(g_buffer.normal.clone()),
+                stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                binding: 1,
+                set: 0,
+            },
+            UniformDescriptor {
+                data: Arc::new(g_buffer.albedo.clone()),
+                stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                binding: 2,
+                set: 0,
+            },
+
+            UniformDescriptor {
+                data: Arc::new(lights),
+                stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                binding: 4,
+                set: 0,
+            },
+        ];
+
+        let light_pass_shader = Shader::from_file(device.clone(),
+                                       &render_target.capabilities.resolution,
+                                       &render_pass.render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniforms0);
+        let plane = Mesh::new(device.clone(), "assets/mesh/plane.obj", pool.g_buffer_setup);
+
+        //g_buffer.build_deferred_command_buffer(&pool.draw_command_buffer, &frame_buffers, &render_pass.render_pass);
         g_buffer.build_scene_command_buffer(&pool, &mesh, &shader);
+
+        render_pass.record_commands(&pool.draw_command_buffer, &|command| {
+            device.cmd_set_viewport(command, &light_pass_shader.viewports);
+            device.cmd_set_scissor(command, &light_pass_shader.scissors);
+            device.cmd_bind_pipeline(command, vk::PipelineBindPoint::Graphics, light_pass_shader.graphics_pipeline);
+            device.cmd_bind_descriptor_sets(command, vk::PipelineBindPoint::Graphics, light_pass_shader.pipeline_layout, 0, &light_pass_shader.descriptor_sets, &[]);
+
+            plane.draw(command);
+            device.cmd_end_render_pass(command);
+        });
+
         Renderer{
             instance,
             device,
@@ -292,7 +370,9 @@ impl Renderer {
             rendering_complete_semaphore,
             offscreen_semaphore,
             mesh,
-            shader
+            shader,
+            light_pass: light_pass_shader,
+            plane
         }
     }}
 

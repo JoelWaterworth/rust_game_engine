@@ -15,16 +15,16 @@ use std::mem;
 use std::sync::Arc;
 
 #[derive(Clone, Copy)]
-struct Light {
-    position: [f32; 3],
-    color: [f32; 3],
-    radius: f32,
+pub struct Light {
+    pub position: [f32; 3],
+    pub color: [f32; 3],
+    pub radius: f32,
 }
 
 #[derive(Clone, Copy)]
-struct Lights {
-    lights: [Light; 6],
-    view_pos: [f32; 3],
+pub struct Lights {
+    pub lights: [Light; 6],
+    pub view_pos: [f32; 3],
 }
 
 pub struct RenderPass {
@@ -220,15 +220,30 @@ impl RenderPass {
         Self {resolution, sampler, device: device.clone(), memory, render_pass, frame_buffers, depth, colour_attachments: attachments, render_pass_begin_infos}
     }}
 
-    pub unsafe fn record_commands<F: FnOnce(vk::CommandBuffer) + Copy>(&self, commands: Vec<vk::CommandBuffer>, f: F) {
+    pub unsafe fn record_commands<F: FnOnce(vk::CommandBuffer) + Clone>(&self, commands: &Vec<vk::CommandBuffer>, f: F) {
         for i in 0..commands.len() {
-            record_off_screen(&self.device, commands[i],
-                              |command_buffer| {
-                                  self.device.cmd_begin_render_pass(command_buffer, &self.render_pass_begin_infos[i], vk::SubpassContents::Inline);
-                                  f(command_buffer)
-                              }
-            );
+            let fc = f.clone();
+            let command_buffer_begin_info = vk::CommandBufferBeginInfo {
+                s_type: vk::StructureType::CommandBufferBeginInfo,
+                p_next: ptr::null(),
+                p_inheritance_info: ptr::null(),
+                flags: vk::COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
+            };
+            self.device.begin_command_buffer(commands[i], &command_buffer_begin_info).expect("Begin commandbuffer");
+            self.device.cmd_begin_render_pass(commands[i], &self.render_pass_begin_infos[i], vk::SubpassContents::Inline);
+            fc(commands[i]);
+            self.device.end_command_buffer(commands[i]).expect("End commandbuffer");
         }
+    }
+    pub fn attachment_to_uniform(&self, set: u32) -> Vec<UniformDescriptor> {
+        self.colour_attachments.iter().enumerate().map(|(i, attachment)| {
+            UniformDescriptor {
+                data: Arc::new(attachment.clone()),
+                stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                binding: i as u32,
+                set: 0,
+            }
+        }).collect()
     }
 }
 
@@ -257,8 +272,6 @@ pub struct GBuffer {
     pub deferred_render_pass: vk::RenderPass,
     sampler: vk::Sampler,
     frame_buffer: vk::Framebuffer,
-    pub shader: Shader,
-    mesh: Mesh,
     pub position: Attachment,
     pub normal: Attachment,
     pub albedo: Attachment,
@@ -430,69 +443,6 @@ impl GBuffer {
             };
             let frame_buffer = device.create_framebuffer(&frame_buffer_create_info, None).unwrap();
 
-            let lights_slice = [
-                Light {
-                    position: [-0.5, 0.5, -2.0],
-                    color: [1.0, 1.0, 0.0],
-                    radius: 10.0,
-                }, Light {
-                    position: [-0.5, -0.5, 1.0],
-                    color: [0.5, 0.5, 0.0],
-                    radius: 10.0,
-                }, Light {
-                    position: [-0.5, -0.5, -1.0],
-                    color: [1.0, 0.0, 0.7],
-                    radius: 10.0,
-                }, Light {
-                    position: [0.5, 0.5, 2.0],
-                    color: [1.0, 1.0, 0.0],
-                    radius: 10.0,
-                }, Light {
-                    position: [0.5, -0.5, 0.5],
-                    color: [0.5, 0.5, 0.0],
-                    radius: 10.0,
-                }, Light {
-                    position: [0.5, 0.5, -0.5],
-                    color: [1.0, 0.0, 0.7],
-                    radius: 10.0,
-                }
-            ];
-
-            let lights = UniformBuffer::init(device.clone(), Lights{lights: lights_slice, view_pos: [0.0, 0.0, 1.0]});
-
-            let uniforms = vec![
-                UniformDescriptor {
-                    data: Arc::new(position.clone()),
-                    stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-                    binding: 1,
-                    set: 0,
-                },
-                UniformDescriptor {
-                    data: Arc::new(normal.clone()),
-                    stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-                    binding: 2,
-                    set: 0,
-                },
-                UniformDescriptor {
-                    data: Arc::new(albedo.clone()),
-                    stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-                    binding: 3,
-                    set: 0,
-                },
-
-                UniformDescriptor {
-                    data: Arc::new(lights),
-                    stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-                    binding: 4,
-                    set: 0,
-                },
-            ];
-
-            let shader = Shader::from_file(device.clone(),
-                                           &resolution,
-                                           &render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniforms);
-            let mesh = Mesh::new(device.clone(), "assets/mesh/plane.obj", command_buffer);
-
             GBuffer {
                 position,
                 normal,
@@ -503,8 +453,6 @@ impl GBuffer {
                 deferred_render_pass,
                 sampler,
                 frame_buffer,
-                shader,
-                mesh,
                 device: device.clone(),
                 dynamic_alignment
             }
@@ -550,6 +498,7 @@ impl GBuffer {
                               });
         }
     }
+    /*
     pub fn build_deferred_command_buffer(&self, draw_buffers: &Vec<vk::CommandBuffer>, frame_buffers: &Vec<vk::Framebuffer>, render_pass: &vk::RenderPass) { unsafe {
         let clear_values =
             vec![vk::ClearValue::new_color(vk::ClearColorValue::new_float32([0.0, 0.0, 0.0, 0.0])),
@@ -585,6 +534,7 @@ impl GBuffer {
             });
         }
     }}
+    */
 }
 
 impl Drop for GBuffer {
