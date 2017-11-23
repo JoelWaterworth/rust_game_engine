@@ -220,9 +220,8 @@ impl RenderPass {
         Self {resolution, sampler, device: device.clone(), memory, render_pass, frame_buffers, depth, colour_attachments: attachments, render_pass_begin_infos}
     }}
 
-    pub unsafe fn record_commands<F: FnOnce(vk::CommandBuffer) + Clone>(&self, commands: &Vec<vk::CommandBuffer>, f: F) {
+    pub unsafe fn record_commands<F: Fn(vk::CommandBuffer)>(&self, commands: &Vec<vk::CommandBuffer>, f: &F) {
         for i in 0..commands.len() {
-            let fc = f.clone();
             let command_buffer_begin_info = vk::CommandBufferBeginInfo {
                 s_type: vk::StructureType::CommandBufferBeginInfo,
                 p_next: ptr::null(),
@@ -231,7 +230,7 @@ impl RenderPass {
             };
             self.device.begin_command_buffer(commands[i], &command_buffer_begin_info).expect("Begin commandbuffer");
             self.device.cmd_begin_render_pass(commands[i], &self.render_pass_begin_infos[i], vk::SubpassContents::Inline);
-            fc(commands[i]);
+            f(commands[i]);
             self.device.end_command_buffer(commands[i]).expect("End commandbuffer");
         }
     }
@@ -269,7 +268,7 @@ impl Drop for RenderPass {
 pub struct GBuffer {
     pub depth: Attachment,
     resolution: vk::Extent2D,
-    pub deferred_render_pass: vk::RenderPass,
+    pub render_pass: vk::RenderPass,
     sampler: vk::Sampler,
     frame_buffer: vk::Framebuffer,
     pub position: Attachment,
@@ -410,7 +409,7 @@ impl GBuffer {
                         vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     dst_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                 }];
-            let deferred_render_pass_create_info = vk::RenderPassCreateInfo {
+            let render_pass_create_info = vk::RenderPassCreateInfo {
                 s_type: vk::StructureType::RenderPassCreateInfo,
                 flags: Default::default(),
                 p_next: ptr::null(),
@@ -421,7 +420,7 @@ impl GBuffer {
                 dependency_count: dependencies.len() as u32,
                 p_dependencies: dependencies.as_ptr(),
             };
-            let deferred_render_pass = device.create_render_pass(&deferred_render_pass_create_info, None).unwrap();
+            let render_pass = device.create_render_pass(&render_pass_create_info, None).unwrap();
 
             let attachments = [
                 position.descriptor.image_view,
@@ -434,7 +433,7 @@ impl GBuffer {
                 s_type: vk::StructureType::FramebufferCreateInfo,
                 p_next: ptr::null(),
                 flags: Default::default(),
-                render_pass: deferred_render_pass,
+                render_pass: render_pass,
                 attachment_count: attachments.len() as u32,
                 p_attachments: attachments.as_ptr(),
                 width: resolution.width,
@@ -450,7 +449,7 @@ impl GBuffer {
                 depth,
                 memory,
                 resolution,
-                deferred_render_pass,
+                render_pass,
                 sampler,
                 frame_buffer,
                 device: device.clone(),
@@ -472,7 +471,7 @@ impl GBuffer {
             let render_pass_begin_info = vk::RenderPassBeginInfo {
                 s_type: vk::StructureType::RenderPassBeginInfo,
                 p_next: ptr::null(),
-                render_pass: self.deferred_render_pass,
+                render_pass: self.render_pass,
                 framebuffer: self.frame_buffer,
                 render_area: vk::Rect2D {
                     offset: vk::Offset2D { x: 0, y: 0 },
@@ -540,7 +539,7 @@ impl GBuffer {
 impl Drop for GBuffer {
     fn drop(&mut self) { unsafe {
         self.device.destroy_framebuffer(self.frame_buffer, None);
-        self.device.destroy_render_pass(self.deferred_render_pass, None);
+        self.device.destroy_render_pass(self.render_pass, None);
         self.device.destroy_sampler(self.sampler, None);
 
         self.device.destroy_image_view(self.albedo.descriptor.image_view, None);

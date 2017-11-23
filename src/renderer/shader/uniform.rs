@@ -60,7 +60,7 @@ pub struct DynamicUniformBuffer {
     dynamic: DyanimicResource,
     device: Arc<Device>,
     size: usize,
-    align: usize,
+    pub align: usize,
 }
 
 impl DynamicUniformBuffer {

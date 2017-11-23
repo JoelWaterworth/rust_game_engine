@@ -43,6 +43,7 @@ use renderer::shader::uniform::{DynamicUniformBuffer, UniformBuffer};
 use renderer::surface::*;
 use renderer::texture::*;
 use renderer::g_buffer::{GBuffer, RenderPass};
+use std::mem;
 
 pub struct Instance {
     pub entry: Entry<V1_0>,
@@ -184,6 +185,15 @@ impl Renderer {
             flags: Default::default(),
         };
 
+//        let g_buffer = RenderPass::new(device.clone(),
+//                                       render_target.capabilities.resolution.clone(),
+//                                       vec![(vk::Format::R16g16b16a16Sfloat, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal),
+//                                            (vk::Format::R16g16b16a16Sfloat, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal),
+//                                            (vk::Format::R8g8b8a8Unorm, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal)],
+//                                       (vk::Format::D16Unorm, vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, vk::ImageLayout::DepthStencilAttachmentOptimal),
+//                                       None
+//        );
+
         let render_pass = RenderPass::new(device.clone(),
                                             render_target.capabilities.resolution.clone(),
                                             vec![(render_target.capabilities.format.format, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::PresentSrcKhr)],
@@ -246,7 +256,7 @@ impl Renderer {
             device.clone(),mats);
 
         let mv = UniformBuffer::init(device.clone(), VP::from_camera(&camera, render_target.capabilities.resolution.width, render_target.capabilities.resolution.height));
-
+        let align = uniform_buffer.align.clone() as u32;
         let uniforms = vec![
             UniformDescriptor {
                 data: arc_d_texture,
@@ -275,7 +285,7 @@ impl Renderer {
         ];
         let shader = Shader::from_file(device.clone(),
                                        &render_target.capabilities.resolution,
-                                       &g_buffer.deferred_render_pass,
+                                       &g_buffer.render_pass,
                                        "assets/shaders/texture.frag", "assets/shaders/texture.vert",
                                        true,
                                        uniforms);
@@ -310,7 +320,7 @@ impl Renderer {
 
         let lights = UniformBuffer::init(device.clone(), Lights{lights: lights_slice, view_pos: [0.0, 0.0, 1.0]});
 
-        let uniforms0 = vec![
+        let uniform0 = vec![
             UniformDescriptor {
                 data: Arc::new(g_buffer.position.clone()),
                 stage: vk::SHADER_STAGE_FRAGMENT_BIT,
@@ -329,7 +339,6 @@ impl Renderer {
                 binding: 2,
                 set: 0,
             },
-
             UniformDescriptor {
                 data: Arc::new(lights),
                 stage: vk::SHADER_STAGE_FRAGMENT_BIT,
@@ -340,13 +349,26 @@ impl Renderer {
 
         let light_pass_shader = Shader::from_file(device.clone(),
                                        &render_target.capabilities.resolution,
-                                       &render_pass.render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniforms0);
+                                       &render_pass.render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniform0);
         let plane = Mesh::new(device.clone(), "assets/mesh/plane.obj", pool.g_buffer_setup);
 
         //g_buffer.build_deferred_command_buffer(&pool.draw_command_buffer, &frame_buffers, &render_pass.render_pass);
         g_buffer.build_scene_command_buffer(&pool, &mesh, &shader);
 
-        render_pass.record_commands(&pool.draw_command_buffer, &|command| {
+        /*
+        g_buffer.record_commands(&vec![pool.off_screen_command_buffer], &(|command| {
+            device.cmd_set_viewport(command, &shader.viewports);
+            device.cmd_set_scissor(command, &shader.scissors);
+            device.cmd_bind_pipeline(command, vk::PipelineBindPoint::Graphics, shader.graphics_pipeline);
+            for i in 0..3 {
+                device.cmd_bind_descriptor_sets(command, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[dynamic_alignment * i]);
+
+                mesh.draw(command);
+            }
+            device.cmd_end_render_pass(command);
+        }));*/
+
+        render_pass.record_commands(&pool.draw_command_buffer, &(|command| {
             device.cmd_set_viewport(command, &light_pass_shader.viewports);
             device.cmd_set_scissor(command, &light_pass_shader.scissors);
             device.cmd_bind_pipeline(command, vk::PipelineBindPoint::Graphics, light_pass_shader.graphics_pipeline);
@@ -354,7 +376,7 @@ impl Renderer {
 
             plane.draw(command);
             device.cmd_end_render_pass(command);
-        });
+        }));
 
         Renderer{
             instance,
