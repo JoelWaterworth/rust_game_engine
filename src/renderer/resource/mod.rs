@@ -4,7 +4,6 @@ use ash::util::*;
 use std::sync::Arc;
 use std::mem::align_of;
 use std::ptr;
-use std::path::Path;
 use std::collections::HashMap;
 
 use renderer::device::Device;

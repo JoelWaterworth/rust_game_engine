@@ -1,9 +1,6 @@
 use camera::{Transform, Camera};
-use std::collections::HashMap;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::path::Path;
-use std::ffi::OsStr;
 
 use scene_object::Actor;
 use renderer::resource::ResourceManager;

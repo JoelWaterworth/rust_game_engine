@@ -40,7 +40,7 @@ use renderer::shader::{Shader, UniformDescriptor};
 use renderer::shader::uniform::{DynamicUniformBuffer, UniformBuffer};
 use renderer::surface::*;
 use renderer::texture::*;
-use renderer::g_buffer::GBuffer;
+use renderer::g_buffer::{GBuffer, RenderPass};
 
 pub struct Instance {
     pub entry: Entry<V1_0>,
@@ -141,7 +141,7 @@ pub struct Renderer {
 
     pool: Pool,
     frame_buffers: Vec<vk::Framebuffer>,
-    render_pass: vk::RenderPass,
+    render_pass: RenderPass,
     g_buffer: GBuffer,
 
     present_complete_semaphore: vk::Semaphore,
@@ -180,89 +180,14 @@ impl Renderer {
             flags: Default::default(),
         };
 
-        let renderpass_attachments = vec![
-            vk::AttachmentDescription {
-                format: render_target.capabilities.format.format,
-                flags: vk::AttachmentDescriptionFlags::empty(),
-                samples: vk::SAMPLE_COUNT_1_BIT,
-                load_op: vk::AttachmentLoadOp::Clear,
-                store_op: vk::AttachmentStoreOp::Store,
-                stencil_load_op: vk::AttachmentLoadOp::DontCare,
-                stencil_store_op: vk::AttachmentStoreOp::DontCare,
-                initial_layout: vk::ImageLayout::Undefined,
-                final_layout: vk::ImageLayout::PresentSrcKhr,
-            },
-            vk::AttachmentDescription {
-                format: vk::Format::D16Unorm,
-                flags: vk::AttachmentDescriptionFlags::empty(),
-                samples: vk::SAMPLE_COUNT_1_BIT,
-                load_op: vk::AttachmentLoadOp::Clear,
-                store_op: vk::AttachmentStoreOp::Store,
-                stencil_load_op: vk::AttachmentLoadOp::DontCare,
-                stencil_store_op: vk::AttachmentStoreOp::DontCare,
-                initial_layout: vk::ImageLayout::Undefined,
-                final_layout: vk::ImageLayout::DepthStencilAttachmentOptimal,
-            },
-        ];
+        let render_pass = RenderPass::new(device.clone(),
+                                            render_target.capabilities.resolution.clone(),
+                                            vec![(render_target.capabilities.format.format, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::PresentSrcKhr)],
+                                            (vk::Format::D16Unorm, vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, vk::ImageLayout::DepthStencilAttachmentOptimal),
+                                          Some(&render_target.swap_chain.image_views)
+        );
 
-        let color_attachments_ref = vec![
-            vk::AttachmentReference {
-                attachment: 0,
-                layout: vk::ImageLayout::ColorAttachmentOptimal}];
-
-        let depth_attachment_ref = vk::AttachmentReference {
-            attachment: 1,
-            layout: vk::ImageLayout::DepthStencilAttachmentOptimal,
-        };
-        let subpass = vk::SubpassDescription {
-            color_attachment_count: color_attachments_ref.len() as u32,
-            p_color_attachments: color_attachments_ref.as_ptr(),
-            p_depth_stencil_attachment: &depth_attachment_ref,
-            flags: Default::default(),
-            pipeline_bind_point: vk::PipelineBindPoint::Graphics,
-            input_attachment_count: 0,
-            p_input_attachments: ptr::null(),
-            p_resolve_attachments: ptr::null(),
-            preserve_attachment_count: 0,
-            p_preserve_attachments: ptr::null(),
-        };
-
-        let dependencies = [
-            vk::SubpassDependency {
-                dependency_flags: vk::DEPENDENCY_BY_REGION_BIT,
-                src_subpass: vk::VK_SUBPASS_EXTERNAL,
-                dst_subpass: Default::default(),
-                src_stage_mask: vk::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                src_access_mask: vk::ACCESS_MEMORY_READ_BIT,
-                dst_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                dst_access_mask: vk::ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                    vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            },
-            vk::SubpassDependency {
-                dependency_flags: vk::DEPENDENCY_BY_REGION_BIT,
-                src_subpass: Default::default(),
-                dst_subpass: vk::VK_SUBPASS_EXTERNAL,
-                src_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                src_access_mask: Default::default(),
-                dst_access_mask: vk::ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                    vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                dst_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            }
-        ];
-        let render_pass_create_info = vk::RenderPassCreateInfo {
-            s_type: vk::StructureType::RenderPassCreateInfo,
-            flags: Default::default(),
-            p_next: ptr::null(),
-            attachment_count: renderpass_attachments.len() as u32,
-            p_attachments: renderpass_attachments.as_ptr(),
-            subpass_count: 1,
-            p_subpasses: &subpass,
-            dependency_count: dependencies.len() as u32,
-            p_dependencies: dependencies.as_ptr(),
-        };
-        let render_pass = device.create_render_pass(&render_pass_create_info, None).unwrap();
-
-        let g_buffer = GBuffer::create_g_buffer(device.clone(), render_target.capabilities.resolution.clone(), &render_pass, pool.setup_command_buffer);
+        let g_buffer = GBuffer::create_g_buffer(device.clone(), render_target.capabilities.resolution.clone(), &render_pass.render_pass, pool.setup_command_buffer);
         let diffuse_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_COLOR.tga");
         let spec_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_NRM.tga");
         let mesh = Mesh::new(device.clone(), "assets/mesh/armour.obj", pool.setup_command_buffer);
@@ -280,12 +205,12 @@ impl Renderer {
         let frame_buffers: Vec<vk::Framebuffer> = render_target.swap_chain.image_views
             .iter()
             .map(|&present_image_view| {
-                let framebuffer_attachments = [present_image_view, g_buffer.depth.descriptor.image_view.clone()];
+                let framebuffer_attachments = [present_image_view, render_pass.depth.descriptor.image_view.clone()];
                 let frame_buffer_create_info = vk::FramebufferCreateInfo {
                     s_type: vk::StructureType::FramebufferCreateInfo,
                     p_next: ptr::null(),
                     flags: Default::default(),
-                    render_pass,
+                    render_pass: render_pass.render_pass,
                     attachment_count: framebuffer_attachments.len() as u32,
                     p_attachments: framebuffer_attachments.as_ptr(),
                     width: render_target.capabilities.resolution.width,
@@ -351,7 +276,7 @@ impl Renderer {
                                        true,
                                        uniforms);
 
-        g_buffer.build_deferred_command_buffer(&pool.draw_command_buffer, &frame_buffers, &render_pass);
+        g_buffer.build_deferred_command_buffer(&pool.draw_command_buffer, &frame_buffers, &render_pass.render_pass);
         g_buffer.build_scene_command_buffer(&pool, &mesh, &shader);
         Renderer{
             instance,
@@ -418,7 +343,6 @@ impl Drop for Renderer {
         for framebuffer in self.frame_buffers.clone() {
             self.device.destroy_framebuffer(framebuffer, None);
         }
-        self.device.destroy_render_pass(self.render_pass, None);
     }}
 }
 
