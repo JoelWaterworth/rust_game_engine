@@ -22,7 +22,7 @@ use camera::*;
 use renderer::g_buffer::{Light, Lights};
 
 
-use cgmath::{Vector3};
+use cgmath::Vector3;
 
 mod surface;
 mod shader;
@@ -37,13 +37,12 @@ pub mod resource;
 use renderer::memory::*;
 use renderer::vk_commands::{Pool, record_submit_commandbuffer};
 use renderer::mesh::Mesh;
-use renderer::device::{Device};
+use renderer::device::Device;
 use renderer::shader::{Shader, UniformDescriptor};
 use renderer::shader::uniform::{DynamicUniformBuffer, UniformBuffer};
 use renderer::surface::*;
 use renderer::texture::*;
 use renderer::g_buffer::RenderPass;
-use std::mem;
 
 pub struct Instance {
     pub entry: Entry<V1_0>,
@@ -51,7 +50,7 @@ pub struct Instance {
 }
 
 impl Instance {
-    fn init(engine_name: &str, app_name: &str)-> Instance {
+    fn init(engine_name: &str, app_name: &str) -> Instance {
         let entry = Entry::new().unwrap();
 
         let app_name = CString::new(app_name).unwrap();
@@ -92,23 +91,27 @@ impl Instance {
                 .expect("Instance creation error")
         };
 
-        Instance{entry,
-            handle: instance}
+        Instance {
+            entry,
+            handle: instance
+        }
     }
 }
 
 impl Drop for Instance {
-    fn drop(&mut self) { unsafe {
-        self.handle.destroy_instance(None);
-    }}
+    fn drop(&mut self) {
+        unsafe {
+            self.handle.destroy_instance(None);
+        }
+    }
 }
 
 impl InstanceV1_0 for Instance {
     type Fp = V1_0;
-    fn handle(&self) -> types::Instance{
+    fn handle(&self) -> types::Instance {
         self.handle.handle()
     }
-    fn fp_v1_0(&self) -> &InstanceFnV1_0{
+    fn fp_v1_0(&self) -> &InstanceFnV1_0 {
         self.handle.fp_v1_0()
     }
 }
@@ -141,12 +144,10 @@ pub struct Renderer {
     pub device: Arc<Device>,
     debug_report_loader: DebugReport,
     debug_call_back: vk::DebugReportCallbackEXT,
-
     pool: Pool,
     frame_buffers: Vec<vk::Framebuffer>,
     render_pass: RenderPass,
     g_buffer: RenderPass,
-
     present_complete_semaphore: vk::Semaphore,
     rendering_complete_semaphore: vk::Semaphore,
     offscreen_semaphore: vk::Semaphore,
@@ -157,274 +158,272 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn init(engine_name: &str, app_name: &str, window: &winit::Window) -> Renderer { unsafe {
-        let instance = Arc::new(Instance::init(engine_name, app_name));
+    pub fn init(engine_name: &str, app_name: &str, window: &winit::Window) -> Renderer {
+        unsafe {
+            let instance = Arc::new(Instance::init(engine_name, app_name));
 
-        let debug_info = vk::DebugReportCallbackCreateInfoEXT {
-            s_type: vk::StructureType::DebugReportCallbackCreateInfoExt,
-            p_next: ptr::null(),
-            flags: vk::DEBUG_REPORT_ERROR_BIT_EXT | vk::DEBUG_REPORT_WARNING_BIT_EXT |
-                vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-            pfn_callback: vulkan_debug_callback,
-            p_user_data: ptr::null_mut(),
-        };
-        let debug_report_loader = DebugReport::new(&instance.entry, &instance.handle)
-            .expect("Unable to load debug report");
-        let debug_call_back =
-            debug_report_loader.create_debug_report_callback_ext(&debug_info, None)
-                .unwrap();
+            let debug_info = vk::DebugReportCallbackCreateInfoEXT {
+                s_type: vk::StructureType::DebugReportCallbackCreateInfoExt,
+                p_next: ptr::null(),
+                flags: vk::DEBUG_REPORT_ERROR_BIT_EXT | vk::DEBUG_REPORT_WARNING_BIT_EXT |
+                    vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                pfn_callback: vulkan_debug_callback,
+                p_user_data: ptr::null_mut(),
+            };
+            let debug_report_loader = DebugReport::new(&instance.entry, &instance.handle)
+                .expect("Unable to load debug report");
+            let debug_call_back =
+                debug_report_loader.create_debug_report_callback_ext(&debug_info, None)
+                    .unwrap();
 
-        let (render_target, device) =
-            RenderTarget::create_render_target_and_device(instance.clone(), window);
+            let (render_target, device) =
+                RenderTarget::create_render_target_and_device(instance.clone(), window);
 
-        let pool = Pool::init(device.clone(), render_target.swap_chain.image_count);
+            let pool = Pool::init(device.clone(), render_target.swap_chain.image_count);
 
-        let semaphore_create_info = vk::SemaphoreCreateInfo {
-            s_type: vk::StructureType::SemaphoreCreateInfo,
-            p_next: ptr::null(),
-            flags: Default::default(),
-        };
+            let semaphore_create_info = vk::SemaphoreCreateInfo {
+                s_type: vk::StructureType::SemaphoreCreateInfo,
+                p_next: ptr::null(),
+                flags: Default::default(),
+            };
 
-        let g_buffer = RenderPass::new(device.clone(),
-                                       render_target.capabilities.resolution.clone(),
-                                       vec![(vk::Format::R16g16b16a16Sfloat, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal),
-                                            (vk::Format::R16g16b16a16Sfloat, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal),
-                                            (vk::Format::R8g8b8a8Unorm, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal)],
-                                       (vk::Format::D16Unorm, vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, vk::ImageLayout::DepthStencilAttachmentOptimal),
-                                       None
-        );
+            let g_buffer = RenderPass::new(device.clone(),
+                                           render_target.capabilities.resolution.clone(),
+                                           vec![(vk::Format::R16g16b16a16Sfloat, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal),
+                                                (vk::Format::R16g16b16a16Sfloat, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal),
+                                                (vk::Format::R8g8b8a8Unorm, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::ColorAttachmentOptimal)],
+                                           (vk::Format::D16Unorm, vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, vk::ImageLayout::DepthStencilAttachmentOptimal),
+                                           None
+            );
 
-        let render_pass = RenderPass::new(device.clone(),
-                                            render_target.capabilities.resolution.clone(),
-                                            vec![(render_target.capabilities.format.format, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::PresentSrcKhr)],
-                                            (vk::Format::D16Unorm, vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, vk::ImageLayout::DepthStencilAttachmentOptimal),
-                                          Some(&render_target.swap_chain.image_views)
-        );
-        let diffuse_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_COLOR.tga");
-        let spec_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_NRM.tga");
-        let mesh = Mesh::new(device.clone(), "assets/mesh/armour.obj", pool.setup_command_buffer);
+            let render_pass = RenderPass::new(device.clone(),
+                                              render_target.capabilities.resolution.clone(),
+                                              vec![(render_target.capabilities.format.format, vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT, vk::ImageLayout::PresentSrcKhr)],
+                                              (vk::Format::D16Unorm, vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, vk::ImageLayout::DepthStencilAttachmentOptimal),
+                                              Some(&render_target.swap_chain.image_views)
+            );
+            let diffuse_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_COLOR.tga");
+            let spec_texture = Texture::init(device.clone(), "assets/textures/MarbleGreen_NRM.tga");
+            let mesh = Mesh::new(device.clone(), "assets/mesh/armour.obj", pool.setup_command_buffer);
 
-        record_submit_commandbuffer(&device,
-                                    pool.setup_command_buffer,
-                                    &[vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT],
-                                    &[],
-                                    &[],
-                                    |texture_command_buffer| {
-                                        diffuse_texture.load_texture(texture_command_buffer);
-                                        spec_texture.load_texture(texture_command_buffer);
-                                    }
-        );
-        let frame_buffers: Vec<vk::Framebuffer> = render_target.swap_chain.image_views
-            .iter()
-            .map(|&present_image_view| {
-                let framebuffer_attachments = [present_image_view, render_pass.depth.descriptor.image_view.clone()];
-                let frame_buffer_create_info = vk::FramebufferCreateInfo {
-                    s_type: vk::StructureType::FramebufferCreateInfo,
-                    p_next: ptr::null(),
-                    flags: Default::default(),
-                    render_pass: render_pass.render_pass,
-                    attachment_count: framebuffer_attachments.len() as u32,
-                    p_attachments: framebuffer_attachments.as_ptr(),
-                    width: render_target.capabilities.resolution.width,
-                    height: render_target.capabilities.resolution.height,
-                    layers: 1,
-                };
-                device.create_framebuffer(&frame_buffer_create_info, None).unwrap()
-            })
-            .collect();
+            record_submit_commandbuffer(&device,
+                                        pool.setup_command_buffer,
+                                        &[vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT],
+                                        &[],
+                                        &[],
+                                        |texture_command_buffer| {
+                                            diffuse_texture.load_texture(texture_command_buffer);
+                                            spec_texture.load_texture(texture_command_buffer);
+                                        }
+            );
+            let frame_buffers: Vec<vk::Framebuffer> = render_target.swap_chain.image_views
+                .iter()
+                .map(|&present_image_view| {
+                    let framebuffer_attachments = [present_image_view, render_pass.depth.descriptor.image_view.clone()];
+                    let frame_buffer_create_info = vk::FramebufferCreateInfo {
+                        s_type: vk::StructureType::FramebufferCreateInfo,
+                        p_next: ptr::null(),
+                        flags: Default::default(),
+                        render_pass: render_pass.render_pass,
+                        attachment_count: framebuffer_attachments.len() as u32,
+                        p_attachments: framebuffer_attachments.as_ptr(),
+                        width: render_target.capabilities.resolution.width,
+                        height: render_target.capabilities.resolution.height,
+                        layers: 1,
+                    };
+                    device.create_framebuffer(&frame_buffer_create_info, None).unwrap()
+                })
+                .collect();
 
-        let present_complete_semaphore = device.create_semaphore(
-            &semaphore_create_info, None).unwrap();
-        let rendering_complete_semaphore = device.create_semaphore(
-            &semaphore_create_info, None).unwrap();
-        let offscreen_semaphore = device.create_semaphore(
-            &semaphore_create_info, None).unwrap();
+            let present_complete_semaphore = device.create_semaphore(
+                &semaphore_create_info, None).unwrap();
+            let rendering_complete_semaphore = device.create_semaphore(
+                &semaphore_create_info, None).unwrap();
+            let offscreen_semaphore = device.create_semaphore(
+                &semaphore_create_info, None).unwrap();
 
 
-        let arc_d_texture = Arc::new(diffuse_texture);
-        let arc_s_texture = Arc::new(spec_texture);
-        let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
+            let arc_d_texture = Arc::new(diffuse_texture);
+            let arc_s_texture = Arc::new(spec_texture);
+            let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
 
-        let mats: Vec<ModelSpace> = (0..3).map(|i: i64| {
-            let x = (i as f32) * 2.5;
-            ModelSpace::from_location(Vector3::new(x - 1.5, -2.0, -0.5 - (i as f32)))
-        }).collect::<Vec<ModelSpace>>();
+            let mats: Vec<ModelSpace> = (0..3).map(|i: i64| {
+                let x = (i as f32) * 2.5;
+                ModelSpace::from_location(Vector3::new(x - 1.5, -2.0, -0.5 - (i as f32)))
+            }).collect::<Vec<ModelSpace>>();
 
-        let uniform_buffer = DynamicUniformBuffer::init(
-            device.clone(),mats);
+            let uniform_buffer = Arc::new(DynamicUniformBuffer::init(
+                device.clone(), mats));
 
-        let mv = UniformBuffer::init(device.clone(), VP::from_camera(&camera, render_target.capabilities.resolution.width, render_target.capabilities.resolution.height));
+            let mv = UniformBuffer::init(device.clone(), VP::from_camera(&camera, render_target.capabilities.resolution.width, render_target.capabilities.resolution.height));
 
-        let uniforms = vec![
-            UniformDescriptor {
-                data: arc_d_texture,
+            let uniforms = vec![
+                UniformDescriptor {
+                    data: arc_d_texture,
+                    stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                    binding: 1,
+                    set: 0,
+                },
+                UniformDescriptor {
+                    data: arc_s_texture,
+                    stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+                    binding: 2,
+                    set: 0,
+                },
+                UniformDescriptor {
+                    data: Arc::new(mv),
+                    stage: vk::SHADER_STAGE_VERTEX_BIT,
+                    binding: 0,
+                    set: 0,
+                },
+                UniformDescriptor {
+                    data: uniform_buffer.clone(),
+                    stage: vk::SHADER_STAGE_VERTEX_BIT,
+                    binding: 3,
+                    set: 0,
+                }
+            ];
+            let shader = Shader::from_file(device.clone(),
+                                           &render_target.capabilities.resolution,
+                                           &g_buffer.render_pass,
+                                           "assets/shaders/texture.frag", "assets/shaders/texture.vert",
+                                           true,
+                                           uniforms);
+
+            let lights_slice = [
+                Light {
+                    position: [-0.5, 0.5, -2.0],
+                    color: [1.0, 1.0, 0.0],
+                    radius: 10.0,
+                }, Light {
+                    position: [-0.5, -0.5, 1.0],
+                    color: [0.5, 0.5, 0.0],
+                    radius: 10.0,
+                }, Light {
+                    position: [-0.5, -0.5, -1.0],
+                    color: [1.0, 0.0, 0.7],
+                    radius: 10.0,
+                }, Light {
+                    position: [0.5, 0.5, 2.0],
+                    color: [1.0, 1.0, 0.0],
+                    radius: 10.0,
+                }, Light {
+                    position: [0.5, -0.5, 0.5],
+                    color: [0.5, 0.5, 0.0],
+                    radius: 10.0,
+                }, Light {
+                    position: [0.5, 0.5, -0.5],
+                    color: [1.0, 0.0, 0.7],
+                    radius: 10.0,
+                }
+            ];
+
+            let lights = UniformBuffer::init(device.clone(), Lights { lights: lights_slice, view_pos: [0.0, 0.0, 1.0] });
+
+            let mut uniform0 = g_buffer.attachment_to_uniform(0);
+            uniform0.push(UniformDescriptor {
+                data: Arc::new(lights),
                 stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-                binding: 1,
+                binding: 4,
                 set: 0,
-            },
-            UniformDescriptor {
-                data: arc_s_texture,
-                stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-                binding: 2,
-                set: 0,
-            },
-            UniformDescriptor {
-                data: Arc::new(mv),
-                stage: vk::SHADER_STAGE_VERTEX_BIT,
-                binding: 0,
-                set: 0,
-            },
-            UniformDescriptor {
-                data: Arc::new(uniform_buffer),
-                stage: vk::SHADER_STAGE_VERTEX_BIT,
-                binding: 3,
-                set: 0,
+            });
+
+            let light_pass_shader = Shader::from_file(device.clone(),
+                                                      &render_target.capabilities.resolution,
+                                                      &render_pass.render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniform0);
+            let plane = Mesh::new(device.clone(), "assets/mesh/plane.obj", pool.g_buffer_setup);
+            g_buffer.record_commands(&vec![pool.off_screen_command_buffer], &(|command| {
+                device.cmd_set_viewport(command, &shader.viewports);
+                device.cmd_set_scissor(command, &shader.scissors);
+                device.cmd_bind_pipeline(command, vk::PipelineBindPoint::Graphics, shader.graphics_pipeline);
+                for i in 0..3 {
+                    device.cmd_bind_descriptor_sets(command, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[uniform_buffer.align * i]);
+                    mesh.draw(command);
+                }
+                device.cmd_end_render_pass(command);
+            }));
+
+            render_pass.record_commands(&pool.draw_command_buffer, &(|command| {
+                device.cmd_set_viewport(command, &light_pass_shader.viewports);
+                device.cmd_set_scissor(command, &light_pass_shader.scissors);
+                device.cmd_bind_pipeline(command, vk::PipelineBindPoint::Graphics, light_pass_shader.graphics_pipeline);
+                device.cmd_bind_descriptor_sets(command, vk::PipelineBindPoint::Graphics, light_pass_shader.pipeline_layout, 0, &light_pass_shader.descriptor_sets, &[]);
+
+                plane.draw(command);
+                device.cmd_end_render_pass(command);
+            }));
+
+            Renderer {
+                instance,
+                device,
+                render_target,
+                debug_report_loader,
+                debug_call_back,
+                pool,
+                frame_buffers,
+                render_pass,
+                g_buffer,
+                present_complete_semaphore,
+                rendering_complete_semaphore,
+                offscreen_semaphore,
+                mesh,
+                shader,
+                light_pass: light_pass_shader,
+                plane
             }
-        ];
-        let shader = Shader::from_file(device.clone(),
-                                       &render_target.capabilities.resolution,
-                                       &g_buffer.render_pass,
-                                       "assets/shaders/texture.frag", "assets/shaders/texture.vert",
-                                       true,
-                                       uniforms);
-
-        let lights_slice = [
-            Light {
-                position: [-0.5, 0.5, -2.0],
-                color: [1.0, 1.0, 0.0],
-                radius: 10.0,
-            }, Light {
-                position: [-0.5, -0.5, 1.0],
-                color: [0.5, 0.5, 0.0],
-                radius: 10.0,
-            }, Light {
-                position: [-0.5, -0.5, -1.0],
-                color: [1.0, 0.0, 0.7],
-                radius: 10.0,
-            }, Light {
-                position: [0.5, 0.5, 2.0],
-                color: [1.0, 1.0, 0.0],
-                radius: 10.0,
-            }, Light {
-                position: [0.5, -0.5, 0.5],
-                color: [0.5, 0.5, 0.0],
-                radius: 10.0,
-            }, Light {
-                position: [0.5, 0.5, -0.5],
-                color: [1.0, 0.0, 0.7],
-                radius: 10.0,
-            }
-        ];
-
-        let lights = UniformBuffer::init(device.clone(), Lights{lights: lights_slice, view_pos: [0.0, 0.0, 1.0]});
-
-        let mut uniform0 = g_buffer.attachment_to_uniform(0);
-        uniform0.push(UniformDescriptor {
-            data: Arc::new(lights),
-            stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-            binding: 4,
-            set: 0,
-        });
-
-        let light_pass_shader = Shader::from_file(device.clone(),
-                                       &render_target.capabilities.resolution,
-                                       &render_pass.render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniform0);
-        let plane = Mesh::new(device.clone(), "assets/mesh/plane.obj", pool.g_buffer_setup);
-
-        let ubo_alignment = device.device_properties.limits.min_uniform_buffer_offset_alignment;
-        let type_size = mem::size_of::<ModelSpace>() as u64;
-        let alignment = if (type_size % ubo_alignment) > 0 { ubo_alignment } else { 0 };
-        let dynamic_alignment = ((type_size / ubo_alignment) * ubo_alignment + alignment) as u32;
-
-        g_buffer.record_commands(&vec![pool.off_screen_command_buffer], &(|command| {
-            device.cmd_set_viewport(command, &shader.viewports);
-            device.cmd_set_scissor(command, &shader.scissors);
-            device.cmd_bind_pipeline(command, vk::PipelineBindPoint::Graphics, shader.graphics_pipeline);
-            for i in 0..3 {
-                device.cmd_bind_descriptor_sets(command, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[dynamic_alignment * i]);
-                mesh.draw(command);
-            }
-            device.cmd_end_render_pass(command);
-        }));
-
-        render_pass.record_commands(&pool.draw_command_buffer, &(|command| {
-            device.cmd_set_viewport(command, &light_pass_shader.viewports);
-            device.cmd_set_scissor(command, &light_pass_shader.scissors);
-            device.cmd_bind_pipeline(command, vk::PipelineBindPoint::Graphics, light_pass_shader.graphics_pipeline);
-            device.cmd_bind_descriptor_sets(command, vk::PipelineBindPoint::Graphics, light_pass_shader.pipeline_layout, 0, &light_pass_shader.descriptor_sets, &[]);
-
-            plane.draw(command);
-            device.cmd_end_render_pass(command);
-        }));
-
-        Renderer{
-            instance,
-            device,
-            render_target,
-            debug_report_loader,
-            debug_call_back,
-            pool,
-            frame_buffers,
-            render_pass,
-            g_buffer,
-            present_complete_semaphore,
-            rendering_complete_semaphore,
-            offscreen_semaphore,
-            mesh,
-            shader,
-            light_pass: light_pass_shader,
-            plane
         }
-    }}
+    }
 
     pub fn get_device(&self) -> &ash::Device<V1_0> {
         &self.device.handle
     }
 
-    pub fn render(&self) { unsafe {
+    pub fn render(&self) {
+        unsafe {
+            let current_buffer = self.render_target.next_image(self.present_complete_semaphore);
 
-        let current_buffer = self.render_target.next_image(self.present_complete_semaphore);
+            // off screen
+            let mut submit_info = vk::SubmitInfo {
+                s_type: vk::StructureType::SubmitInfo,
+                p_next: ptr::null(),
+                wait_semaphore_count: 1,
+                p_wait_semaphores: &self.present_complete_semaphore,
+                p_wait_dst_stage_mask: &vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                command_buffer_count: 1,
+                p_command_buffers: &self.pool.off_screen_command_buffer,
+                signal_semaphore_count: 1,
+                p_signal_semaphores: &self.offscreen_semaphore,
+            };
 
-        // off screen
-        let mut submit_info = vk::SubmitInfo {
-            s_type: vk::StructureType::SubmitInfo,
-            p_next: ptr::null(),
-            wait_semaphore_count: 1,
-            p_wait_semaphores: &self.present_complete_semaphore,
-            p_wait_dst_stage_mask: &vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            command_buffer_count: 1,
-            p_command_buffers: &self.pool.off_screen_command_buffer,
-            signal_semaphore_count: 1,
-            p_signal_semaphores: &self.offscreen_semaphore,
-        };
-
-        self.device.queue_submit(self.device.queue, &[submit_info.clone()], vk::Fence::null())
-            .expect("offscreen submit failed");
+            self.device.queue_submit(self.device.queue, &[submit_info.clone()], vk::Fence::null())
+                .expect("offscreen submit failed");
 
 
-        submit_info.p_wait_semaphores = &self.offscreen_semaphore;
-        submit_info.p_signal_semaphores = &self.rendering_complete_semaphore;
-        submit_info.p_command_buffers = &self.pool.draw_command_buffer[current_buffer as usize];
-        self.device.queue_submit(self.device.queue, &[submit_info.clone()], vk::Fence::null())
-            .expect("deferred submit failed");
+            submit_info.p_wait_semaphores = &self.offscreen_semaphore;
+            submit_info.p_signal_semaphores = &self.rendering_complete_semaphore;
+            submit_info.p_command_buffers = &self.pool.draw_command_buffer[current_buffer as usize];
+            self.device.queue_submit(self.device.queue, &[submit_info.clone()], vk::Fence::null())
+                .expect("deferred submit failed");
 
-        self.render_target.present(&self.rendering_complete_semaphore, current_buffer);
-        self.device.queue_wait();
-
-    }}
+            self.render_target.present(&self.rendering_complete_semaphore, current_buffer);
+            self.device.queue_wait();
+        }
+    }
 }
 
 impl Drop for Renderer {
-    fn drop(&mut self) { unsafe {
-        self.device.device_wait_idle().unwrap();
-        self.device.destroy_semaphore(self.present_complete_semaphore, None);
-        self.device.destroy_semaphore(self.rendering_complete_semaphore, None);
-        self.device.destroy_semaphore(self.offscreen_semaphore, None);
-        self.debug_report_loader.destroy_debug_report_callback_ext(self.debug_call_back, None);
-        for framebuffer in self.frame_buffers.clone() {
-            self.device.destroy_framebuffer(framebuffer, None);
+    fn drop(&mut self) {
+        unsafe {
+            self.device.device_wait_idle().unwrap();
+            self.device.destroy_semaphore(self.present_complete_semaphore, None);
+            self.device.destroy_semaphore(self.rendering_complete_semaphore, None);
+            self.device.destroy_semaphore(self.offscreen_semaphore, None);
+            self.debug_report_loader.destroy_debug_report_callback_ext(self.debug_call_back, None);
+            for framebuffer in self.frame_buffers.clone() {
+                self.device.destroy_framebuffer(framebuffer, None);
+            }
         }
-    }}
+    }
 }
 
 unsafe extern "system" fn vulkan_debug_callback(_: vk::DebugReportFlagsEXT,

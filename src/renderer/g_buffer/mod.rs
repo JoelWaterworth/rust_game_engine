@@ -72,7 +72,7 @@ impl RenderPass {
             &req
         );
 
-        let renderpass_attachments: Vec<vk::AttachmentDescription> = req.iter().map(|&(format, usage, final_layout)| {
+        let renderpass_attachments: Vec<vk::AttachmentDescription> = req.iter().map(|&(format, _, final_layout)| {
             vk::AttachmentDescription {
                 format,
                 flags: vk::AttachmentDescriptionFlags::empty(),
@@ -365,7 +365,7 @@ impl Attachment {
     }}
 
     pub fn create_attachments_with_layout(device: Arc<Device>, extent: vk::Extent2D, sampler: vk::Sampler, req: &Vec<(vk::Format, vk::ImageUsageFlags, vk::ImageLayout)>) -> (Vec<Attachment>, vk::DeviceMemory) { unsafe {
-        let images: Vec<(vk::Image, vk::Format, vk::MemoryRequirements, vk::ImageAspectFlags, vk::ImageUsageFlags)> = req.iter().map(|&(format, usage, layout)| {
+        let images: Vec<(vk::Image, vk::Format, vk::MemoryRequirements, vk::ImageAspectFlags, vk::ImageUsageFlags)> = req.iter().map(|&(format, usage, _)| {
             let aspect_mask = if usage == vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT {
                 vk::IMAGE_ASPECT_COLOR_BIT
             } else {
