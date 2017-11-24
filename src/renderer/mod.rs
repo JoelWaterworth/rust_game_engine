@@ -42,7 +42,7 @@ use renderer::shader::{Shader, UniformDescriptor};
 use renderer::shader::uniform::{DynamicUniformBuffer, UniformBuffer};
 use renderer::surface::*;
 use renderer::texture::*;
-use renderer::g_buffer::{GBuffer, RenderPass};
+use renderer::g_buffer::RenderPass;
 use std::mem;
 
 pub struct Instance {
