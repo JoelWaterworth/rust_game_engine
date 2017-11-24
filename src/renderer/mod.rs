@@ -14,6 +14,7 @@ use std::ops::Drop;
 
 use std::sync::Arc;
 
+
 use winit;
 use std::u32;
 use std::u64;
@@ -22,7 +23,7 @@ use camera::*;
 use renderer::g_buffer::{Light, Lights};
 
 
-use cgmath::Vector3;
+use cgmath::{Vector3, Deg, Euler};
 
 mod surface;
 mod shader;
@@ -247,10 +248,16 @@ impl Renderer {
             let arc_s_texture = Arc::new(spec_texture);
             let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
 
-            let mats: Vec<ModelSpace> = (0..3).map(|i: i64| {
+            let mut mats: Vec<Mat4> = (0..3).map(|i: i64| {
                 let x = (i as f32) * 2.5;
-                ModelSpace::from_location(Vector3::new(x - 1.5, -2.0, -0.5 - (i as f32)))
-            }).collect::<Vec<ModelSpace>>();
+                Transform::new(Vector3::new(x - 1.5, -2.0, -0.5 - (i as f32)), Euler::new(Deg(0.0), Deg(0.0), Deg(0.0)), Vector3::new(0.75, 0.75, 0.75)).to_mat4()
+            }).collect::<Vec<Mat4>>();
+            mats.push(
+                Transform::new(
+                    Vector3::new(0.0, -2.0, -4.0),
+                    Euler::new(Deg(90.0), Deg(0.0), Deg(0.0)),
+                    Vector3::new(6.0, 4.0, 6.0)).to_mat4()
+            );
 
             let uniform_buffer = Arc::new(DynamicUniformBuffer::init(
                 device.clone(), mats));
@@ -340,6 +347,8 @@ impl Renderer {
                     device.cmd_bind_descriptor_sets(command, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[uniform_buffer.align * i]);
                     mesh.draw(command);
                 }
+                device.cmd_bind_descriptor_sets(command, vk::PipelineBindPoint::Graphics, shader.pipeline_layout, 0, &shader.descriptor_sets, &[uniform_buffer.align * 3]);
+                plane.draw(command);
                 device.cmd_end_render_pass(command);
             }));
 
