@@ -9,13 +9,15 @@ use renderer::shader::UniformDescriptor;
 use std::ptr;
 use std::sync::Arc;
 
-#[derive(Clone, Copy)]
+#[repr(C)]
+#[derive(Clone, Copy,)]
 pub struct Light {
     pub position: [f32; 3],
     pub color: [f32; 3],
     pub radius: f32,
 }
 
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Lights {
     pub lights: [Light; 6],
@@ -23,7 +25,7 @@ pub struct Lights {
 }
 
 pub struct RenderPass {
-    resolution: vk::Extent2D,
+    pub resolution: vk::Extent2D,
     pub colour_attachments: Vec<Attachment>,
     pub depth: Attachment,
     frame_buffers: Vec<vk::Framebuffer>,

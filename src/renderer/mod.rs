@@ -45,6 +45,7 @@ use renderer::surface::*;
 use renderer::texture::*;
 use renderer::g_buffer::RenderPass;
 
+
 pub struct Instance {
     pub entry: Entry<V1_0>,
     pub handle: ash::Instance<V1_0>
@@ -290,38 +291,37 @@ impl Renderer {
                     set: 0,
                 }
             ];
-            let shader = Shader::from_file(device.clone(),
-                                           &render_target.capabilities.resolution,
-                                           &g_buffer.render_pass,
-                                           "assets/shaders/texture.frag", "assets/shaders/texture.vert",
+            let shader = Shader::from_single_file(device.clone(),
+                                           &g_buffer,
+                                           "assets/shaders/deferred/mrt.glsl",
                                            true,
                                            uniforms);
 
             let lights_slice = [
                 Light {
                     position: [-0.5, 0.5, -2.0],
-                    color: [1.0, 1.0, 0.0],
-                    radius: 10.0,
-                }, Light {
-                    position: [-0.5, -0.5, 1.0],
-                    color: [0.5, 0.5, 0.0],
-                    radius: 10.0,
+                    color: [1.0, 1.0, 1.0],
+                    radius: 1.0,
                 }, Light {
                     position: [-0.5, -0.5, -1.0],
-                    color: [1.0, 0.0, 0.7],
-                    radius: 10.0,
+                    color: [1.0, 1.0, 1.0],
+                    radius: 1.0,
                 }, Light {
-                    position: [0.5, 0.5, 2.0],
-                    color: [1.0, 1.0, 0.0],
-                    radius: 10.0,
+                    position: [-0.5, -0.5, -1.0],
+                    color: [1.0, 1.0, 1.0],
+                    radius: 1.0,
                 }, Light {
-                    position: [0.5, -0.5, 0.5],
-                    color: [0.5, 0.5, 0.0],
-                    radius: 10.0,
+                    position: [0.5, 0.5, 4.0],
+                    color: [1.0, 1.0, 1.0],
+                    radius: 1.0,
                 }, Light {
-                    position: [0.5, 0.5, -0.5],
-                    color: [1.0, 0.0, 0.7],
-                    radius: 10.0,
+                    position: [0.5, -0.5, 3.5],
+                    color: [1.0, 1.0, 1.0],
+                    radius: 1.0,
+                }, Light {
+                    position: [0.5, 0.5, 6.5],
+                    color: [1.0, 1.0, 1.0],
+                    radius: 1.0,
                 }
             ];
 
@@ -335,9 +335,8 @@ impl Renderer {
                 set: 0,
             });
 
-            let light_pass_shader = Shader::from_file(device.clone(),
-                                                      &render_target.capabilities.resolution,
-                                                      &render_pass.render_pass, "assets/shaders/light_pass.frag", "assets/shaders/light_pass.vert", false, uniform0);
+            let light_pass_shader = Shader::from_single_file(device.clone(),
+                                                      &render_pass, "assets/shaders/deferred/lightPass.glsl", false, uniform0);
             let plane = Mesh::new(device.clone(), "assets/mesh/plane.obj", pool.g_buffer_setup);
             g_buffer.record_commands(&vec![pool.off_screen_command_buffer], &(|command| {
                 device.cmd_set_viewport(command, &shader.viewports);

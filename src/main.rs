@@ -12,6 +12,8 @@ extern crate glsl_to_spirv;
 extern crate cgmath;
 extern crate tobj;
 extern crate image;
+#[macro_use]
+extern crate nom;
 
 use std::collections::HashMap;
 use winit::{Event, WindowEvent, ControlFlow};

@@ -6,21 +6,19 @@ use std::mem;
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
+use std::u32;
+use std::ops::Drop;
+use std::sync::Arc;
 use glsl_to_spirv::{compile, ShaderType};
 
-//use ash::Instance;
-//use ash::Device;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
-use std::ops::Drop;
 
-use std::sync::Arc;
-
+use renderer::g_buffer::RenderPass;
 use renderer::device::Device;
 use renderer::mesh::Vertex;
 
-use std::u32;
-
 pub mod uniform;
+mod parser;
 use self::uniform::*;
 
 pub struct UniformDescriptor {
@@ -55,6 +53,30 @@ pub struct Shader {
 }
 
 impl Shader {
+    pub fn from_single_file<P: AsRef<Path>>(device: Arc<Device>,
+                                            render_pass: &RenderPass,
+                                            path: P,
+                                            deferred: bool,
+                                            uniforms: Vec<UniformDescriptor>) -> Shader {
+        let mut file = File::open(path).expect("Could not find file");
+        let mut file_string = String::new();
+        file.read_to_string(&mut file_string).unwrap();
+        let shader_src = parser::parser(file_string.as_bytes());
+
+        let frag_spv_file = compile(shader_src.fragment, ShaderType::Fragment).unwrap();
+        let frag_bytes: Vec<u8> = frag_spv_file.bytes().filter_map(|byte| byte.ok()).collect();
+
+        let vert_spv_file = compile(shader_src.vertex, ShaderType::Vertex).unwrap();
+        let vert_bytes: Vec<u8> = vert_spv_file.bytes().filter_map(|byte| byte.ok()).collect();
+
+        Shader::from_spriv(device,
+                           &render_pass.resolution,
+                           &render_pass.render_pass,
+                           frag_bytes,
+                           vert_bytes,
+                           deferred,
+                           uniforms)
+    }
     #[allow(unused_must_use)]
     pub fn from_file<P: AsRef<Path>>(device: Arc<Device>,
                                      resolution: &vk::Extent2D,
@@ -430,14 +452,14 @@ impl Shader {
         device.destroy_shader_module(vertex_shader_module, None);
         device.destroy_shader_module(fragment_shader_module, None);
 
-        Shader{device: device.clone()
+        Self{device: device.clone()
             ,graphics_pipeline: graphics_pipelines[0],
-            pipeline_layout: pipeline_layout,
-            scissors: scissors,
-            viewports: viewports,
-            descriptor_sets: descriptor_sets,
-            descriptor_set_layout: descriptor_set_layout,
-            descriptor_pool: descriptor_pool,
+            pipeline_layout,
+            scissors,
+            viewports,
+            descriptor_sets,
+            descriptor_set_layout,
+            descriptor_pool,
             uniform_buffers: uniforms}
     } }
 }

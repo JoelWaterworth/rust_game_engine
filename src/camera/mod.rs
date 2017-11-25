@@ -1,11 +1,10 @@
-use cgmath::{Matrix4,Vector3,Rad,perspective, Euler, Deg};
+use cgmath::{Matrix4,Vector3,perspective, Euler, Deg};
 use cgmath::conv::{array4x4};
 use cgmath::Point3;
 
-use std::ops::AddAssign;
-
 pub type Mat4 = [[f32; 4]; 4];
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct VP {
     projection: [[f32; 4]; 4],
