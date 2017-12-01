@@ -5,7 +5,7 @@ use std::default::Default;
 use std::ptr;
 
 use ash::version::{InstanceV1_0, DeviceV1_0, V1_0};
-use ash::extensions::{Swapchain};
+use ash::extensions::{Swapchain, DebugReport};
 use std::ops::Drop;
 
 use std::sync::Arc;
@@ -60,7 +60,7 @@ impl Device {
 
         let device_properties = instance.get_physical_device_properties(p_device);
 
-        Device{queue_family_index: queue_family_index, handle: device, queue: present_queue, instance: instance, memory_properties: device_memory_properties, device_properties: device_properties, p_device: p_device}
+        Device{queue_family_index, handle: device, queue: present_queue, instance, memory_properties: device_memory_properties, device_properties, p_device}
     } }
 
     pub fn allocate_suitable_memory(&self, buffer: vk::Buffer) -> vk::DeviceMemory { unsafe {

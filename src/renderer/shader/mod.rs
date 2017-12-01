@@ -18,7 +18,7 @@ use renderer::device::Device;
 use renderer::mesh::Vertex;
 
 pub mod uniform;
-mod parser;
+mod shader_parser;
 use self::uniform::*;
 
 pub struct UniformDescriptor {
@@ -38,6 +38,18 @@ macro_rules! offset_of{
             }
         }
     }
+}
+
+pub struct Material {
+    pub device: Arc<Device>,
+    descriptor_set_layout: Vec<vk::DescriptorSetLayout>,
+    descriptor_pool: vk::DescriptorPool,
+    pub descriptor_sets: Vec<vk::DescriptorSet>,
+    shader: Arc<Shader>,
+}
+
+impl Material {
+
 }
 
 pub struct Shader {
@@ -61,7 +73,7 @@ impl Shader {
         let mut file = File::open(path).expect("Could not find file");
         let mut file_string = String::new();
         file.read_to_string(&mut file_string).unwrap();
-        let shader_src = parser::parser(file_string.as_bytes());
+        let shader_src = shader_parser::parser(file_string.as_bytes());
 
         let frag_spv_file = compile(shader_src.fragment, ShaderType::Fragment).unwrap();
         let frag_bytes: Vec<u8> = frag_spv_file.bytes().filter_map(|byte| byte.ok()).collect();

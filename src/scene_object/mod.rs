@@ -3,6 +3,9 @@ use std::collections::HashMap;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::path::Path;
+use std::sync::Arc;
+use renderer::mesh::Mesh;
+use renderer::shader::Material;
 
 pub trait Actor {
     fn can_update(&self) -> bool {false}
@@ -53,7 +56,9 @@ pub struct ComponentData {
 
 pub struct StaticMesh {
     component_data: ComponentData,
-    mesh: Path,
+    mesh: Arc<Mesh>,
+    shader: Arc<Material>,
+
 }
 
 struct EmptyActor {

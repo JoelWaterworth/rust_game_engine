@@ -5,23 +5,24 @@ use renderer::device::Device;
 use renderer::memory::*;
 use renderer::shader::uniform::Uniform;
 use renderer::shader::UniformDescriptor;
+use cgmath::{Vector3, Vector4};
 
 use std::ptr;
 use std::sync::Arc;
 
-#[repr(C)]
-#[derive(Clone, Copy,)]
+#[derive(Clone, Copy, Debug)]
+#[repr(C, packed)]
 pub struct Light {
-    pub position: [f32; 3],
-    pub color: [f32; 3],
+    pub position: Vector4<f32>,
+    pub color: Vector3<f32>,
     pub radius: f32,
 }
 
+#[derive(Clone, Copy, Debug)]
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub struct Lights {
-    pub lights: [Light; 6],
-    pub view_pos: [f32; 3],
+    pub lights: [Light; 3],
+    pub view_pos: Vector4<f32>,
 }
 
 pub struct RenderPass {
@@ -230,12 +231,12 @@ impl RenderPass {
             self.device.end_command_buffer(commands[i]).expect("End commandbuffer");
         }
     }
-    pub fn attachment_to_uniform(&self, set: u32) -> Vec<UniformDescriptor> {
+    pub fn attachment_to_uniform(&self, set: u32, offset: u32) -> Vec<UniformDescriptor> {
         self.colour_attachments.iter().enumerate().map(|(i, attachment)| {
             UniformDescriptor {
                 data: Arc::new(attachment.clone()),
                 stage: vk::SHADER_STAGE_FRAGMENT_BIT,
-                binding: i as u32,
+                binding: (i as u32) + offset,
                 set,
             }
         }).collect()

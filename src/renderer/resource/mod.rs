@@ -10,6 +10,7 @@ use renderer::device::Device;
 use renderer::mesh::Mesh;
 use renderer::memory::find_memorytype_index;
 use renderer::texture::Texture;
+use renderer::shader::Shader;
 
 pub struct DyanimicResource {
     device: Arc<Device>,
@@ -49,7 +50,7 @@ impl DyanimicResource {
                 p_next: ptr::null(),
                 flags: vk::BufferCreateFlags::empty(),
                 size: size as u64,
-                usage: usage,
+                usage,
                 sharing_mode: vk::SharingMode::Exclusive,
                 queue_family_index_count: 0,
                 p_queue_family_indices: ptr::null(),
@@ -121,12 +122,13 @@ impl Drop for DyanimicResource {
 }
 
 pub struct ResourceManager {
-    meshes: HashMap<String, Mesh>,
-    textures: HashMap<String, Texture>
+    meshes: HashMap<String, Arc<Mesh>>,
+    textures: HashMap<String, Arc<Texture>>,
+    shaders: HashMap<String, Arc<Shader>>,
 }
 
 impl ResourceManager {
     pub fn new() -> Self {
-        Self { meshes: HashMap::new(), textures: HashMap::new()}
+        Self { meshes: HashMap::new(), textures: HashMap::new(), shaders: HashMap::new()}
     }
 }

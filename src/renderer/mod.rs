@@ -23,14 +23,14 @@ use camera::*;
 use renderer::g_buffer::{Light, Lights};
 
 
-use cgmath::{Vector3, Deg, Euler};
+use cgmath::{Vector4, Vector3, Deg, Euler};
 
 mod surface;
-mod shader;
-mod mesh;
+pub mod shader;
+pub mod mesh;
 mod device;
 mod memory;
-mod texture;
+pub mod texture;
 mod vk_commands;
 mod g_buffer;
 pub mod resource;
@@ -40,7 +40,7 @@ use renderer::vk_commands::{Pool, record_submit_commandbuffer};
 use renderer::mesh::Mesh;
 use renderer::device::Device;
 use renderer::shader::{Shader, UniformDescriptor};
-use renderer::shader::uniform::{DynamicUniformBuffer, UniformBuffer};
+use renderer::shader::uniform::{DynamicUniformBuffer, NewUniformBuffer};
 use renderer::surface::*;
 use renderer::texture::*;
 use renderer::g_buffer::RenderPass;
@@ -247,7 +247,7 @@ impl Renderer {
 
             let arc_d_texture = Arc::new(diffuse_texture);
             let arc_s_texture = Arc::new(spec_texture);
-            let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 1.0)), 90.0);
+            let camera = Camera::new(Transform::from_position(Vector3::new(0.0, 0.0, 2.0)), 90.0);
 
             let mut mats: Vec<Mat4> = (0..3).map(|i: i64| {
                 let x = (i as f32) * 2.5;
@@ -263,7 +263,7 @@ impl Renderer {
             let uniform_buffer = Arc::new(DynamicUniformBuffer::init(
                 device.clone(), mats));
 
-            let mv = UniformBuffer::init(device.clone(), VP::from_camera(&camera, render_target.capabilities.resolution.width, render_target.capabilities.resolution.height));
+            let mv = NewUniformBuffer::init(device.clone(), VP::from_camera(&camera, render_target.capabilities.resolution.width, render_target.capabilities.resolution.height));
 
             let uniforms = vec![
                 UniformDescriptor {
@@ -299,35 +299,26 @@ impl Renderer {
 
             let lights_slice = [
                 Light {
-                    position: [-0.5, 0.5, -2.0],
-                    color: [1.0, 1.0, 1.0],
-                    radius: 1.0,
+                    position: Vector4::new(-3.0, -1.0, -1.0, 0.0),
+                    color:  Vector3::new(0.0, 0.0, 1.0),
+                    radius: 4.0,
                 }, Light {
-                    position: [-0.5, -0.5, -1.0],
-                    color: [1.0, 1.0, 1.0],
-                    radius: 1.0,
+                    position: Vector4::new(0.0, 0.0, -2.0, 0.0),
+                    color: Vector3::new(0.0, 1.0, 0.0),
+                    radius: 4.0,
                 }, Light {
-                    position: [-0.5, -0.5, -1.0],
-                    color: [1.0, 1.0, 1.0],
-                    radius: 1.0,
-                }, Light {
-                    position: [0.5, 0.5, 4.0],
-                    color: [1.0, 1.0, 1.0],
-                    radius: 1.0,
-                }, Light {
-                    position: [0.5, -0.5, 3.5],
-                    color: [1.0, 1.0, 1.0],
-                    radius: 1.0,
-                }, Light {
-                    position: [0.5, 0.5, 6.5],
-                    color: [1.0, 1.0, 1.0],
-                    radius: 1.0,
+                    position: Vector4::new(3.0, 1.0, -3.0, 0.0),
+                    color: Vector3::new(1.0, 0.0, 0.0),
+                    radius: 4.0,
                 }
             ];
 
-            let lights = UniformBuffer::init(device.clone(), Lights { lights: lights_slice, view_pos: [0.0, 0.0, 1.0] });
+            let lights = NewUniformBuffer::init(device.clone(), Lights {
+                lights: lights_slice,
+                view_pos: Vector4::new(0.0, 0.0, 1.0, 0.0),
+            });
 
-            let mut uniform0 = g_buffer.attachment_to_uniform(0);
+            let mut uniform0 = g_buffer.attachment_to_uniform(0, 1);
             uniform0.push(UniformDescriptor {
                 data: Arc::new(lights),
                 stage: vk::SHADER_STAGE_FRAGMENT_BIT,

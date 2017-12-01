@@ -1,7 +1,6 @@
 Vertex <
     #version 450 core
-    
-    
+
     #extension GL_ARB_separate_shader_objects : enable
     #extension GL_ARB_shading_language_420pack : enable
     
@@ -19,24 +18,24 @@ Vertex <
     }
 >
 Fragment <
-    #version 450 core
+    #version 450
     
     #extension GL_ARB_separate_shader_objects : enable
     #extension GL_ARB_shading_language_420pack : enable
     
-    layout (binding = 0) uniform sampler2D gPosition;
-    layout (binding = 1) uniform sampler2D gNormal;
-    layout (binding = 2) uniform sampler2D gAlbedoSpec;
-    
+    layout (binding = 1) uniform sampler2D gPosition;
+    layout (binding = 2) uniform sampler2D gNormal;
+    layout (binding = 3) uniform sampler2D gAlbedoSpec;
+
     struct Light {
-        vec3 position;
-        vec3 color;
+        vec4 position;
+        vec3 colour;
         float radius;
     };
-    
+
     layout (binding = 4) uniform UBO {
-        Light lights[6];
-        vec3 viewPos;
+        Light lights[3];
+        vec4 viewPos;
     } ubo;
     
     layout (location = 0) in vec2 inUV;
@@ -50,7 +49,7 @@ Fragment <
         vec3 normal = texture(gNormal, inUV).rgb;
         vec4 albedo = texture(gAlbedoSpec, inUV);
     
-        #define lightCount 6
+        #define lightCount 3
         #define ambient 0.1
     
         // Ambient part
@@ -73,18 +72,21 @@ Fragment <
                 L = normalize(L);
     
                 // Attenuation
-                float atten = ubo.lights[i].radius / (pow(dist, 2.0) + 1.0);
-    
+                float radius = ubo.lights[i].radius;
+                float atten = radius / (pow(dist, 2.0) + 1.0);
+
+                vec3 lightColour = ubo.lights[i].colour.rgb;
+
                 // Diffuse part
                 vec3 N = normalize(normal);
                 float NdotL = max(0.0, dot(N, L));
-                vec3 diff = ubo.lights[i].color * albedo.rgb * NdotL * atten;
+                vec3 diff = lightColour * albedo.rgb * NdotL * atten;
     
                 // Specular part
                 // Specular map values are stored in alpha of albedo mrt
                 vec3 R = reflect(-L, N);
                 float NdotR = max(0.0, dot(R, V));
-                vec3 spec = ubo.lights[i].color * albedo.a * pow(NdotR, 16.0) * atten;
+                vec3 spec = lightColour * albedo.a * pow(NdotR, 16.0) * atten;
     
                 fragcolor += diff + spec;
             }

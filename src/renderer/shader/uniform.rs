@@ -1,12 +1,15 @@
 use ash::vk;
 pub use ash::version::{V1_0, InstanceV1_0, DeviceV1_0, EntryV1_0};
+use ash::util::*;
 
 use std::mem;
+use std::mem::align_of;
 use std::ptr;
 use std::sync::Arc;
 use std::fmt::Debug;
 
 use renderer::resource::DyanimicResource;
+use renderer::memory::create_allocated_buffer;
 use renderer::device::Device;
 
 pub trait Uniform {
@@ -22,39 +25,61 @@ pub trait Uniform {
     }
 }
 
-pub struct UniformBuffer {
-    dynamic: DyanimicResource,
-    alignment: u64,
+pub struct NewUniformBuffer {
+    buffer: vk::Buffer,
+    descriptor: vk::DescriptorBufferInfo,
+    memory: vk::DeviceMemory,
+    device: Arc<Device>,
 }
 
-impl UniformBuffer {
-    pub fn init_with_align<T: Clone + Copy + Sized>(device: Arc<Device>, data: T, alignment: u64) -> UniformBuffer {
-        let dynamic = DyanimicResource::create_resource(
-                                                device,
-                                                vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                                                mem::size_of_val(&data));
+impl NewUniformBuffer {
+    pub fn init<T: Clone + Copy + Sized + Debug>(device: Arc<Device>, data: T) -> Self { unsafe {
+        let size = mem::size_of_val(&data) as u64;
+        let (buffer, memory) =
+            create_allocated_buffer(&device,
+                                    size,
+                                    vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                    vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        let memory_ptr = device
+            .map_memory(memory,
+                        0,
+                        size,
+                        vk::MemoryMapFlags::empty())
+            .unwrap();
+        let mut uniform_slice = Align::new(memory_ptr, align_of::<T>() as u64, size);
+        uniform_slice.copy_from_slice(&[data]);
+        device.unmap_memory(memory);
 
-        let mut map = dynamic.map::<T>();
-        map.copy_from_slice(&[data]);
-        dynamic.unmap();
-
-        UniformBuffer { dynamic , alignment}
-    }
-    pub fn init<T: Clone + Copy + Sized>(device: Arc<Device>, data: T) -> UniformBuffer {
-        UniformBuffer::init_with_align(device, data, mem::size_of_val(&data) as u64)
-    }
+        Self {
+            device: device.clone(),
+            buffer,
+            memory,
+            descriptor: vk::DescriptorBufferInfo {
+                buffer,
+                offset: 0,
+                range: vk::VK_WHOLE_SIZE,
+            },
+        }
+    }}
 }
 
-impl Uniform for UniformBuffer {
+impl Uniform for NewUniformBuffer {
     fn get_descriptor_type(&self) -> vk::DescriptorType {
         vk::DescriptorType::UniformBuffer
     }
     fn buffer_info(&self) -> *const vk::DescriptorBufferInfo {
-        &self.dynamic.descriptor
+        &self.descriptor
     }
 }
 
+impl Drop for NewUniformBuffer {
+    fn drop(&mut self) {
+        unsafe {
+            self.device.destroy_buffer(self.buffer, None);
+            self.device.free_memory(self.memory, None);
+        }
+    }
+}
 
 pub struct DynamicUniformBuffer {
     dynamic: DyanimicResource,

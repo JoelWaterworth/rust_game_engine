@@ -25,6 +25,7 @@ impl VP {
 }
 
 #[derive(Clone)]
+#[repr(C)]
 pub struct Transform {
     pub position: Vector3<f32>,
     pub rotation: Euler<Deg<f32>>,
